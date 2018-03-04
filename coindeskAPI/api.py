@@ -14,3 +14,10 @@ class CoinDeskHttpRequestAPI(object):
     Enable CoinDesk API data request.
     """
     pass
+
+
+class CoinDeskHttpResponseAPI(object):
+    """
+    Enable CoinDEsk API response data parsing.
+    """
+    pass
