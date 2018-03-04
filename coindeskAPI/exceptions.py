@@ -13,3 +13,10 @@ class CoinDeskAPIError(Exception):
             msg += ': {exception}'.format(exception=self.code)
         self.msg = msg
         super(CoinDeskAPIError, self).__init__(self.msg)
+
+
+class CoinDeskAPIHttpRequestError(CoinDeskAPIError):
+    """
+    Handle exception for CoinDesk API request error.
+    """
+    pass
