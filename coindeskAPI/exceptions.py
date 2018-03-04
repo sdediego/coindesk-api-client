@@ -20,3 +20,10 @@ class CoinDeskAPIHttpRequestError(CoinDeskAPIError):
     Handle exception for CoinDesk API request error.
     """
     pass
+
+
+class CoinDeskAPIHttpResponseError(CoinDeskAPIError):
+    """
+    Handle exception for CoinDesk API response error.
+    """
+    pass
