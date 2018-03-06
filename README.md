@@ -23,10 +23,11 @@ These instructions will get you a copy of the project on your local system.
 
 CoinDesk API Client uses a number of open source projects to work properly:
 
-* [requests] - HTTP for Humans
 * [apscheduler] - Advanced Python Scheduler
 * [configparser] - Configuration file parser
 * [pymongo] - Python driver for MongoDB
+* [python-dotenv] - .env file management
+* [requests] - HTTP for Humans
 
 And of course CoinDesk API Client itself is open source with a [public repository][coindesk-api-client] on GitHub.
 
@@ -72,8 +73,9 @@ MIT
 
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
 
-   [coindesk-api-client]: <https://github.com/sdediego/coindesk-api-client>
-   [requests]: <https://github.com/requests/requests>
    [apscheduler]: <https://github.com/agronholm/apscheduler>
+   [coindesk-api-client]: <https://github.com/sdediego/coindesk-api-client>
    [configparser]: <https://github.com/python/cpython/blob/3.5/Lib/configparser.py>
    [pymongo]: <https://github.com/mongodb/mongo-python-driver>
+   [python-dotenv]: <https://github.com/theskumar/python-dotenv>
+   [requests]: <https://github.com/requests/requests>
