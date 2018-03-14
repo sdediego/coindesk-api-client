@@ -90,7 +90,32 @@ class CoinDeskHttpRequestAPI(object):
     """
     Enable CoinDesk API data request.
     """
-    pass
+
+    @classmethod
+    def get(cls, url=None, **kwargs):
+        if url is not None:
+            http_response = cls._https_request(url, **kwargs)
+            json_response = http_response.json()
+            return json_response
+        else:
+            msg = 'Error: API URL must be provided.'
+            raise CoinDeskAPIHttpRequestError(msg)
+
+    @staticmethod
+    def _https_request(url, **kwargs):
+        encoded_params = {}
+        for key, value in kwargs.items():
+            value = str(value).encode(encoding='utf-8')
+            encoded_params.update({key: value})
+
+        http_response = requests.get(url, encoded_params)
+        if http_response.status_code == requests.codes.ok:
+            return http_response
+        else:
+            msg = 'Error: url {}, params {}'.format(url, encoded_params)
+            code = http_response.status_code
+            raise CoinDeskAPIHttpRequestError(msg, code)
+
 
 
 class CoinDeskHttpResponseAPI(object):
