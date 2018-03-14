@@ -93,6 +93,11 @@ class CoinDeskHttpRequestAPI(object):
 
     @classmethod
     def get(cls, url=None, **kwargs):
+        """
+        Retrieve json object from API url.
+
+        :return json: requested json response.
+        """
         if url is not None:
             http_response = cls._https_request(url, **kwargs)
             json_response = http_response.json()
@@ -103,6 +108,11 @@ class CoinDeskHttpRequestAPI(object):
 
     @staticmethod
     def _https_request(url, **kwargs):
+        """
+        Make http request to CoinDesk API.
+
+        :return obj: http object response.
+        """
         encoded_params = {}
         for key, value in kwargs.items():
             value = str(value).encode(encoding='utf-8')
@@ -124,6 +134,12 @@ class CoinDeskHttpResponseAPI(object):
 
     @staticmethod
     def parse(response):
+        """
+        Parse http response from CoinDesk API.
+
+        :param json response: json response from API.
+        :return str: json parsed response.
+        """
         result = {
             'time': response.get('time'),
             'bpi': response.get('bpi'),
