@@ -117,9 +117,20 @@ class CoinDeskHttpRequestAPI(object):
             raise CoinDeskAPIHttpRequestError(msg, code)
 
 
-
 class CoinDeskHttpResponseAPI(object):
     """
     Enable CoinDEsk API response data parsing.
     """
-    pass
+
+    @staticmethod
+    def parse(response):
+        result = {
+            'time': response.get('time'),
+            'bpi': response.get('bpi'),
+        }
+        if None not in result.values():
+            json_result = json.dumps(result)
+            return json_result
+        else:
+            msg = 'Error in API response:\ntime: {time}\nbpi: {bpi}'.format(**result)
+            raise CoinDeskAPIHttpResponseError(msg)
