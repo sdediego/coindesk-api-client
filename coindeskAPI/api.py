@@ -48,6 +48,7 @@ class CoinDeskAPI(object):
         :param str section: filename section to parse.
         :return cls: CoinDeskAPI class instance.
         """
+        cls._validate(data)
         parser = configparser.ConfigParser()
         parser.read(filename)
         if parser.has_section(section):
@@ -59,6 +60,18 @@ class CoinDeskAPI(object):
 
         api_url = base_url + data_url
         return cls(data, api_url)
+
+    @staticmethod
+    def _validate(data):
+        """
+        Validate data type to request.
+
+        :param str data: type of data to fetch (currentprice, historical).
+        """
+        if data != 'currentprice' and data != 'historical':
+            msg = 'Data must be either "currentprice" or "historical".\n'
+            msg += 'Provided data: {}'.format(data)
+            raise CoinDeskAPIError(msg)
 
     def call(self, **kwargs):
         """
