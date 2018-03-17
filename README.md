@@ -11,7 +11,9 @@ Client written in Python 3 for CoinDesk API service:
 
 You can also:
 
+  - Persist data via JSON format file pipeline
   - Persist data via [MongoDB][mongoDB] pipeline
+  - Persist data via [PostgreSQL][postgreSQL] pipeline
   - Automatize data fetching with jobs scheduler
   - Deploy to [Heroku cloud platform][heroku]
 
@@ -25,6 +27,7 @@ CoinDesk API Client uses a number of open source projects to work properly:
 
 * [apscheduler] - Advanced Python Scheduler
 * [configparser] - Configuration file parser
+* [psycopg2] - PostgreSQL adapter fo Python
 * [pymongo] - Python driver for MongoDB
 * [python-dotenv] - .env file management
 * [requests] - HTTP for Humans
@@ -80,6 +83,8 @@ MIT
    [configparser]: <https://github.com/python/cpython/blob/3.5/Lib/configparser.py>
    [heroku]: <https://www.heroku.com>
    [mongoDB]: <https://www.mongodb.com>
+   [postgreSQL]: <https://www.postgresql.org/>
+   [psycopg2]: <http://initd.org/psycopg/>
    [pymongo]: <https://github.com/mongodb/mongo-python-driver>
    [python-dotenv]: <https://github.com/theskumar/python-dotenv>
    [requests]: <https://github.com/requests/requests>
