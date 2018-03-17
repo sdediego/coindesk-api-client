@@ -2,9 +2,9 @@
 # encoding: utf-8
 
 
-class CoinDeskAPIError(Exception):
+class BaseError(Exception):
     """
-    Handle exception for CoinDesk API.
+    Handle generic exception.
     """
 
     def __init__(self, msg, code=None):
@@ -12,17 +12,24 @@ class CoinDeskAPIError(Exception):
             self.code = code
             msg += ': {exception}'.format(exception=self.code)
         self.msg = msg
-        super(CoinDeskAPIError, self).__init__(self.msg)
+        super(BaseError, self).__init__(self.msg)
 
 
-class CoinDeskAPIHttpRequestError(CoinDeskAPIError):
+class CoinDeskAPIError(BaseError):
+    """
+    Handle exception for CoinDesk API.
+    """
+    pass
+
+
+class CoinDeskAPIHttpRequestError(BaseError):
     """
     Handle exception for CoinDesk API request error.
     """
     pass
 
 
-class CoinDeskAPIHttpResponseError(CoinDeskAPIError):
+class CoinDeskAPIHttpResponseError(BaseError):
     """
     Handle exception for CoinDesk API response error.
     """
