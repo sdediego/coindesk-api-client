@@ -10,5 +10,6 @@ __date__ = 'February 2018'
 __all__ = [
     'CoinDeskAPI', 'CoinDeskAPIHttpRequest', 'CoinDeskAPIHttpResponse',
     'BaseError', 'CoinDeskAPIError', 'CoinDeskAPIHttpRequestError',
-    'CoinDeskAPIHttpResponseError', 'MongoDBPipeline',
+    'CoinDeskAPIHttpResponseError', 'JSONFileWriterPipeline', 'MongoDBPipeline',
+    'PostgreSQLPipeline',
 ]
