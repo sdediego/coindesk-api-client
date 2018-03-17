@@ -29,7 +29,7 @@ class CoinDeskAPI(object):
         """
         Represent class via params string.
 
-        :return str: class representarion.
+        :return str: class representation.
         """
         params = {
             'classname': self.__class__.__name__,
@@ -81,12 +81,12 @@ class CoinDeskAPI(object):
         :param str url: API url to request to.
         :return json: request result.
         """
-        response = CoinDeskHttpRequestAPI.get(self._api_url, **kwargs)
-        json_result = CoinDeskHttpResponseAPI.parse(response)
+        response = CoinDeskAPIHttpRequest.get(self._api_url, **kwargs)
+        json_result = CoinDeskAPIHttpResponse.parse(response)
         return json_result
 
 
-class CoinDeskHttpRequestAPI(object):
+class CoinDeskAPIHttpRequest(object):
     """
     Enable CoinDesk API data request.
     """
@@ -127,7 +127,7 @@ class CoinDeskHttpRequestAPI(object):
             raise CoinDeskAPIHttpRequestError(msg, code)
 
 
-class CoinDeskHttpResponseAPI(object):
+class CoinDeskAPIHttpResponse(object):
     """
     Enable CoinDEsk API response data parsing.
     """
