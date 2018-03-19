@@ -43,26 +43,32 @@ A step by step series of examples:
 Get current price for Bitcoin
 ```
 api = CoinDeskAPI.config('currentprice')
-result = api.call()
+response = api.call()
 ```
 
 Get historical price for Bitcoin
 ```
 api = CoinDeskAPI.config('historical')
-result = api.call()
+response = api.call()
 ```
 
 Get historical price for Bitcoin providing optional parameters
 ```
 api = CoinDeskAPI.config('historical')
-result = api.call(currency='EUR', start='2018-01-01', end='2018-03-03')
+response = api.call(currency='EUR', start='2018-01-01', end='2018-03-03')
+```
+
+Persist data in JSON file
+```
+file = JSONFileWriterPipeline.config()
+file.write(response)
 ```
 
 Persist (save or update) data with MongoDB
 ```
 mongo = MongoDBPipeline.config()
 mongo.open_connection()
-mongo.persist_data(result)
+mongo.persist_data(response)
 mongo.close_connection()
 ```
 
