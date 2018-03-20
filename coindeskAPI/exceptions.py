@@ -34,3 +34,10 @@ class CoinDeskAPIHttpResponseError(BaseError):
     Handle exception for CoinDesk API response error.
     """
     pass
+
+
+class JSONFileWriterPipelineError(BaseError):
+    """
+    Handle exception for JSON file writer error.
+    """
+    pass
