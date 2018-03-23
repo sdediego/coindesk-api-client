@@ -63,6 +63,14 @@ class JSONFileWriterPipeline(object):
             msg = 'Incorrect JSON file configuration: {}'.format(file_config)
             raise ValueError(msg)
 
+    def write(self, data):
+        """
+        Open file connection and write data.
+        """
+        with open(self._file, 'a') as json_file:
+            json.dump(data, json_file, indent=2)
+            json_file.write('\n\n')
+
 
 class MongoDBPipeline(object):
     """
