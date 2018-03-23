@@ -71,6 +71,15 @@ class JSONFileWriterPipeline(object):
             json.dump(data, json_file, indent=2)
             json_file.write('\n\n')
 
+    def read(self):
+        """
+        Open file connection and read data.
+
+        :return list: list with json objects.
+        """
+        with open(self._file, 'r') as json_file:
+            return list(self._parse(json_file))
+
 
 class MongoDBPipeline(object):
     """
