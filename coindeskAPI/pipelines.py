@@ -34,6 +34,19 @@ class JSONFileWriterPipeline(object):
         """
         self._file = filepath
 
+    def __str__(self):
+        """
+        Represent class via params string.
+
+        :return str: class representation.
+        """
+        params = {
+            'class': self.__class__.__name__,
+            'path': dirname(self._file),
+            'filename': basename(self._file),
+        }
+        return str(params)
+
 
 class MongoDBPipeline(object):
     """
