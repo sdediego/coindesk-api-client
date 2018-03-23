@@ -47,6 +47,22 @@ class JSONFileWriterPipeline(object):
         }
         return str(params)
 
+    @classmethod
+    def config(cls):
+        """
+        Get JSON file parameters.
+
+        :return cls: JSON file writer class.
+        """
+        file_config = {
+            'filepath': os.getenv('JSON_FILE_PATH'),
+        }
+        if None not in file_config.values():
+            return cls(**file_config)
+        else:
+            msg = 'Incorrect JSON file configuration: {}'.format(file_config)
+            raise ValueError(msg)
+
 
 class MongoDBPipeline(object):
     """
