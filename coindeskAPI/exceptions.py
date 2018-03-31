@@ -41,3 +41,10 @@ class JSONFileWriterPipelineError(BaseError):
     Handle exception for JSON file writer error.
     """
     pass
+
+
+class PostgreSQLPipelineError(BaseError):
+    """
+    Handle exception for PostgreSQL databse error.
+    """
+    pass
