@@ -12,7 +12,7 @@ from os.path import basename, dirname, join
 
 from .exceptions import JSONFileWriterPipelineError
 
-# Custom logger for spiders module
+# Custom logger
 fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,33 @@ class MongoDBPipeline(object):
     """
     Enable persist data in MongoDB.
     """
-    pass
+
+    def __init__(self, mongo_url, mongo_db, mongo_collection):
+        """
+        Initialize MongoDB class config.
+
+        :param str mongo_url: MongoDB locator.
+        :param str mongo_db: MongoDB name.
+        :param str mongo_collection: MongoDB collection name.
+        """
+        self._mongo_url = mongo_url
+        self._mongo_db = mongo_db
+        self._mongo_collection = mongo_collection
+        self._mongo_uri = self._mongo_url + self._mongo_db
+
+    def __str__(self):
+        """
+        Represent class via params string.
+
+        :return str: class representation.
+        """
+        params = {
+            'classname': self.__class__.__name__,
+            'url': self._mongo_url,
+            'db': self._mongo_db,
+            'collection': self._mongo_collection,
+        }
+        return str(params)
 
 
 class PostgreSQLPipeline(object):
