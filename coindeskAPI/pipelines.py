@@ -165,7 +165,41 @@ class MongoDBPipeline(object):
         Close MongoDB client connection.
         """
         self.client.close()
-        
+
+    def persist_data(self, data):
+        """
+        Persist data in MongoDB.
+
+        :param json data: json data to persist.
+        :return json: persisted data in MongoDB.
+        """
+        data = json.loads(data)
+        for key, value in data.items():
+            if not value:
+                raise ValueError('Missing value for {}'.format(key))
+
+        if 'USD' in data.get('bpi'):
+            data.update({'name': 'currentprice'})
+        else:
+            data.update({'name': 'historical'})
+
+        try:
+            data_found = self.collection.find_one(
+                {'name': data.get('name')},
+                {'name': 1, '_id': 0}
+            )
+            if data_found:
+                return self._update(data)
+            return self._insert(data)
+        except PyMongoError as msg:
+            logger.error('Database operation failure: %s', msg)
+
+    def _insert(self, data):
+        pass
+
+    def _update(self, data):
+        pass
+
 
 class PostgreSQLPipeline(object):
     """
