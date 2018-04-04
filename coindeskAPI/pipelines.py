@@ -206,7 +206,19 @@ class MongoDBPipeline(object):
         return data
 
     def _update(self, data):
-        pass
+        """
+        Update data in MongoDB.
+
+        :param json data: json data to update.
+        :return json: updated data in MongoDB.
+        """
+        criteria = data.pop('name', None)
+        if criteria is not None:
+            self.collection.update_one({'name': criteria}, {'$set': data})
+            logger.info('Data updated to MongoDB: %s', data)
+            return data.update({'name': criteria})
+        logger.error('Failed to update data to MongoDB: %s', data)
+        return False
 
 
 class PostgreSQLPipeline(object):
