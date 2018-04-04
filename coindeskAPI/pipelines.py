@@ -150,6 +150,16 @@ class MongoDBPipeline(object):
             msg = 'Incorrect MongoDB configuration: {}'.format(mongo_config)
             raise ValueError(msg)
 
+    def open_connection(self):
+        """
+        Establish MongoDB client connection.
+        """
+        self.client = pymongo.MongoClient(self._mongo_uri)
+        if self.client is None:
+            raise ConnectionFailure('Connection uri: {}'.format(self._mongo_uri))
+        self.db = self.client[self._mongo_db]
+        self.collection = self.db[self._mongo_collection]
+
 
 class PostgreSQLPipeline(object):
     """
