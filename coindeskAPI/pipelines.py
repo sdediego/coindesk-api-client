@@ -195,7 +195,15 @@ class MongoDBPipeline(object):
             logger.error('Database operation failure: %s', msg)
 
     def _insert(self, data):
-        pass
+        """
+        Insert data in MongoDB.
+
+        :param json data: json data to insert.
+        :return json: inserted data in MongoDB.
+        """
+        self.collection.insert_one(data)
+        logger.info('Data inserted to MongoDB: %s', data)
+        return data
 
     def _update(self, data):
         pass
