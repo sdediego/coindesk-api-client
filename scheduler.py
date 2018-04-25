@@ -1,7 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import logging
+
 from apscheduler.schedulers.blocking import BlockingScheduler
+from logging.config import fileConfig
+from os.path import dirname, join
+
+from coindeskAPI.api import CoinDeskAPI
+from coindeskAPI.pipelines import MongoDBPipeline
+
+# Custom logger for spiders module
+fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
+logger = logging.getLogger(__name__)
 
 sched = BlockingScheduler()
 
