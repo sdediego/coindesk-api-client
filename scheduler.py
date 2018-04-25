@@ -24,7 +24,21 @@ def retrieve_and_persit_data(data):
 
     :param str data: type of data (currentprice, historical).
     """
-    pass
+    # Retrieve currentprice/historical data
+    kwargs = {}
+    api = CoinDeskAPI.config(data)
+    if data == 'historical':
+        today = date.today().strftime("%Y-%m-%d")
+        kwargs.update({'start': '2010-01-01', 'end': today})
+    result = api.call(**kwargs)
+
+    # Persist retrieved data
+    logger.info('Persisting fetched data in MongoDB: %s', result)
+    mongo = MongoDBPipeline.config()
+    mongo.open_connection()
+    mongo.persist_data(result)
+    mongo.close_connection()
+    logger.info('Data successfully persisted.')
 
 @sched.scheduled_job(id='currentprice', trigger='interval', minutes=1)
 def currentprice_job():
