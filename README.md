@@ -42,19 +42,19 @@ A step by step series of examples:
 
 Get current price for Bitcoin
 ```
-api = CoinDeskAPI.config('currentprice')
+api = CoinDeskAPIClient.config('currentprice')
 response = api.call()
 ```
 
 Get historical price for Bitcoin
 ```
-api = CoinDeskAPI.config('historical')
+api = CoinDeskAPIClient.config('historical')
 response = api.call()
 ```
 
 Get historical price for Bitcoin providing optional parameters
 ```
-api = CoinDeskAPI.config('historical')
+api = CoinDeskAPIClient.config('historical')
 response = api.call(currency='EUR', start='2018-01-01', end='2018-03-03')
 ```
 
