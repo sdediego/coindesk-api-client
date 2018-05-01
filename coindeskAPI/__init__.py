@@ -8,8 +8,8 @@ __version__ = '1.0'
 __date__ = 'February 2018'
 
 __all__ = [
-    'CoinDeskAPI', 'CoinDeskAPIHttpRequest', 'CoinDeskAPIHttpResponse',
-    'BaseError', 'CoinDeskAPIError', 'CoinDeskAPIHttpRequestError',
+    'CoinDeskAPIClient', 'CoinDeskAPIHttpRequest', 'CoinDeskAPIHttpResponse',
+    'BaseError', 'CoinDeskAPIClientError', 'CoinDeskAPIHttpRequestError',
     'CoinDeskAPIHttpResponseError', 'JSONFileWriterPipeline', 'MongoDBPipeline',
     'PostgreSQLPipeline',
 ]

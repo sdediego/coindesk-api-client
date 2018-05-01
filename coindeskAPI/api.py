@@ -6,12 +6,12 @@ import json
 import os
 import requests
 
-from .exceptions import (CoinDeskAPIError,
+from .exceptions import (CoinDeskAPIClientError,
                         CoinDeskAPIHttpRequestError,
                         CoinDeskAPIHttpResponseError)
 
 
-class CoinDeskAPI(object):
+class CoinDeskAPIClient(object):
     """
     Enable CoinDesk API use.
     """
@@ -56,7 +56,7 @@ class CoinDeskAPI(object):
             data_url = parser.get(section, data)
         else:
             msg = 'Section {} not found in {} file'.format(section, filename)
-            raise CoinDeskAPIError(msg)
+            raise CoinDeskAPIClientError(msg)
 
         api_url = base_url + data_url
         return cls(data, api_url)
@@ -71,7 +71,7 @@ class CoinDeskAPI(object):
         if data != 'currentprice' and data != 'historical':
             msg = 'Data must be either "currentprice" or "historical".\n'
             msg += 'Provided data: {}'.format(data)
-            raise CoinDeskAPIError(msg)
+            raise CoinDeskAPIClientError(msg)
 
     def call(self, **kwargs):
         """

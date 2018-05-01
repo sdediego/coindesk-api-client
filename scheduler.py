@@ -8,7 +8,7 @@ from datetime import date
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from coindeskAPI.api import CoinDeskAPI
+from coindeskAPI.api import CoinDeskAPIClient
 from coindeskAPI.pipelines import MongoDBPipeline
 
 # Custom logger for spiders module
@@ -26,7 +26,7 @@ def retrieve_and_persit_data(data):
     """
     # Retrieve currentprice/historical data
     kwargs = {}
-    api = CoinDeskAPI.config(data)
+    api = CoinDeskAPIClient.config(data)
     if data == 'historical':
         today = date.today().strftime("%Y-%m-%d")
         kwargs.update({'start': '2010-01-01', 'end': today})

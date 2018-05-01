@@ -15,9 +15,9 @@ class BaseError(Exception):
         super(BaseError, self).__init__(self.msg)
 
 
-class CoinDeskAPIError(BaseError):
+class CoinDeskAPIClientError(BaseError):
     """
-    Handle exception for CoinDesk API.
+    Handle exception for CoinDesk API client.
     """
     pass
 
