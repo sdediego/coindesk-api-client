@@ -41,35 +41,35 @@ And of course CoinDesk API Client itself is open source with a [public repositor
 A step by step series of examples:
 
 Get current price for Bitcoin
-```
+```python
 from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('currentprice')
 response = api.call()
 ```
 
 Get historical price for Bitcoin
-```
+```python
 from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('historical')
 response = api.call()
 ```
 
 Get historical price for Bitcoin providing optional parameters
-```
+```python
 from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('historical')
-response = api.call(currency='EUR', start='2018-01-01', end='2018-03-03')
+response = api.call(currency='EUR', start='2018-01-01', end='2018-03-25')
 ```
 
 Persist data in JSON file
-```
+```python
 from coindesk.pipelines import JSONFileWriterPipeline
 file = JSONFileWriterPipeline.config()
 file.write(response)
 ```
 
 Persist (save or update) data with MongoDB
-```
+```python
 from coindesk.pipelines import MongoDBPipeline
 mongo = MongoDBPipeline.config()
 mongo.open_connection()
