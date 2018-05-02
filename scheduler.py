@@ -8,8 +8,8 @@ from datetime import date
 from logging.config import fileConfig
 from os.path import dirname, join
 
-from coindeskAPI.api import CoinDeskAPIClient
-from coindeskAPI.pipelines import MongoDBPipeline
+from coindesk.api import CoinDeskAPIClient
+from coindesk.pipelines import MongoDBPipeline
 
 # Custom logger for spiders module
 fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))

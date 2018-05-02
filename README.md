@@ -34,7 +34,7 @@ CoinDesk API Client uses a number of open source projects to work properly:
 
 And of course CoinDesk API Client itself is open source with a [public repository][coindesk-api-client] on GitHub.
 
-#### Installation
+### Environment
 
 #### Quick Start
 
@@ -42,30 +42,35 @@ A step by step series of examples:
 
 Get current price for Bitcoin
 ```
+from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('currentprice')
 response = api.call()
 ```
 
 Get historical price for Bitcoin
 ```
+from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('historical')
 response = api.call()
 ```
 
 Get historical price for Bitcoin providing optional parameters
 ```
+from coindesk.api import CoinDeskAPIClient
 api = CoinDeskAPIClient.config('historical')
 response = api.call(currency='EUR', start='2018-01-01', end='2018-03-03')
 ```
 
 Persist data in JSON file
 ```
+from coindesk.pipelines import JSONFileWriterPipeline
 file = JSONFileWriterPipeline.config()
 file.write(response)
 ```
 
 Persist (save or update) data with MongoDB
 ```
+from coindesk.pipelines import MongoDBPipeline
 mongo = MongoDBPipeline.config()
 mongo.open_connection()
 mongo.persist_data(response)
