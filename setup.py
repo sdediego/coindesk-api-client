@@ -23,8 +23,9 @@ def find_version(*path_parts):
 
 
 setup(
-    name='coindesk-api-client',
+    name='coindesk',
     verbose_name='CoinDesk API Client written in Python 3',
+    packages=['coindesk'],
     author='Sergio de Diego',
     version=find_version('coindeskAPI', '__init__.py'),
     description='Bitcoin current and historical price fetcher client',
