@@ -27,7 +27,7 @@ setup(
     verbose_name='CoinDesk API Client written in Python 3',
     packages=['coindesk'],
     author='Sergio de Diego',
-    version=find_version('coindeskAPI', '__init__.py'),
+    version=find_version('coindesk', '__init__.py'),
     description='Bitcoin current and historical price fetcher client',
     long_description=read('README.md'),
     url='https://github.com/sdediego/coindesk-api-client',
