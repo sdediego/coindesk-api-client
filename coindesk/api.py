@@ -99,7 +99,7 @@ class CoinDeskAPIHttpRequest(object):
         :return json: requested json response.
         """
         if url is not None:
-            http_response = cls._https_request(url, **kwargs)
+            http_response = cls._http_request(url, **kwargs)
             json_response = http_response.json()
             return json_response
         else:
@@ -107,7 +107,7 @@ class CoinDeskAPIHttpRequest(object):
             raise CoinDeskAPIHttpRequestError(msg)
 
     @staticmethod
-    def _https_request(url, **kwargs):
+    def _http_request(url, **kwargs):
         """
         Make http request to CoinDesk API.
 
@@ -129,7 +129,7 @@ class CoinDeskAPIHttpRequest(object):
 
 class CoinDeskAPIHttpResponse(object):
     """
-    Enable CoinDEsk API response data parsing.
+    Enable CoinDesk API response data parsing.
     """
 
     @staticmethod
