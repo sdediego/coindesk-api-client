@@ -1,6 +1,14 @@
 # Byte-compiled / optimized / DLL files
+.python-version
 __pycache__/
 *.py[cod]
+
+# Deploy
+build/
+dist/
+
+# IDE settings
+.vscode/
 
 # Environment variables
 .env
