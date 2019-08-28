@@ -44,3 +44,13 @@ VALID_INDEX = [
 VALID_FOR = [
     'yesterday',
 ]
+
+# Coindesk API client request configuration parameters
+REQUEST_MAX_RETRIES = 10
+REQUEST_TIMEOUT = 5
+REQUEST_HEADERS = {
+    'Accept': 'application/json',
+    'Accept-Language': 'en-US',
+    'Cache-Control': 'no-cache',
+    'X-API-client-version': API_CLIENT_VERSION
+}
