@@ -15,7 +15,8 @@ from requests.exceptions import RequestException
 from time import sleep
 
 from . import settings
-from .exceptions import CoindeskAPIHttpRequestError
+from .exceptions import (CoindeskAPIClientError,
+                         CoindeskAPIHttpRequestError)
 
 # Custom logger for client module
 fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
@@ -201,3 +202,170 @@ class CoindeskAPIHttpRequest(object):
             'allow_redirects': self.redirects,
             'timeout': settings.REQUEST_TIMEOUT
         }
+
+
+class CoindeskAPIClient(CoindeskAPIHttpRequest):
+    """
+    Enable Coindesk API use.
+    """
+
+    def __init__(self, data_type=None, params={}, retries=10, allow_redirects=True):
+        """
+        Initialize Coindesk API client.
+
+        :param str data_type: type of data to fetch (currentprice, historical).
+        :param dict params: optional url query parameters.
+        :param int retries: number of request attempts before failing.
+        :param bool allow_redirects: enable/disable http verbs redirection.
+        """
+        self._data_type = data_type
+        self._params = params
+        self._api_path = self._get_api_path()
+        self._api_endpoint = self._construct_api_endpoint(data_type, params)
+        super(CoindeskAPIClient, self).__init__(retries, allow_redirects)
+
+    def __str__(self):
+        """
+        Represent class via params string.
+
+        :return str: class representation.
+        """
+        classname = self.__class__.__name__
+        endpoint = self._api_endpoint
+        return f'<{classname}:\nendpoint: {endpoint}>'
+
+    @classmethod
+    def start(cls, data_type=None, params={}, retries=10, allow_redirects=True):
+        """
+        Get Coindesk API client instance.
+
+        :param str data_type: type of data to fetch (currentprice, historical).
+        :param dict params: optional url query parameters.
+        :param int retries: number of request attempts before failing.
+        :param bool allow_redirects: enable/disable http verbs redirection.
+        :return cls: CoindeskAPICient class instance.
+        """
+        # TODO:
+        # utils.validate_data_type(data_type)
+        # params = utils.validate_params(data_type, params)
+        # retries, allow_redirects = cls.validate(retries, allow_redirects)
+        return cls(data_type, params, retries, allow_redirects)
+
+    def _get_api_path(self):
+        """
+        Get Coindesk api base url.
+
+        :return str: Coindesk api base url.
+        """
+        protocol, host, path = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
+        api_path = f'{protocol}://{host}{path}'
+        return self._clean_api_path(api_path)
+
+    def _clean_api_path(self, api_path):
+        """
+        Clean Coindesk api base url.
+
+        :param str api_path: Coindesk api base url.
+        :return str: cleaned Coindesk api base url.
+        """
+        return f'{api_path}/' if not api_path.endswith('/') else api_path
+
+    def _construct_api_endpoint(self, data_type, params):
+        """
+        Get Coindesk api endpoint.
+
+        :param str data_type: type of data to fetch (currentprice, historical).
+        :param dict params: optional query parameters.
+        :return str: Coindesk api endpoint for correspondig data resource.
+        """
+        resource = settings.API_ENDPOINTS.get(data_type)
+        if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            currency_param = params.pop(settings.CURRENCY_PARAM, '')
+            currency = f'/{currency_param}' if currency_param else currency_param
+            resource = resource.format(currency=currency)
+        return f'{self._api_path}{resource}'
+
+    @property
+    def data_type(self):
+        """
+        Get Coindesk data type resource.
+        """
+        return self._data_type
+
+    @data_type.setter
+    def data_type(self, data_type):
+        """
+        Set Coindesk API client data type and corresponding api path attribute.
+
+        :param str value: type of data to fetch (currentprice, historical).
+        """
+        # TODO:
+        # self._data_type = utils.validate_data_type(data_type)
+        if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            self._params = {}
+        self._api_endpoint = self._construct_api_endpoint(data_type, self._params)
+
+    @property
+    def params(self):
+        """
+        Get Coindesk api endpoint optional query parameters.
+        """
+        return self._params
+
+    @params.setter
+    def params(self, params):
+        """
+        Set Coindesk API client optinal query parameters.
+
+        :param dict payload: optional url query parameters.
+        """
+        # TODO:
+        # self._params = utils.validate_params(self._data_type, params)
+        self._api_endpoint = self._construct_api_endpoint(self._data_type, params)
+
+    @property
+    def url(self):
+        """
+        Get Coindesk api endpoint.
+        """
+        return self._api_endpoint
+
+    @property
+    def valid_params(self):
+        """
+        Get Coindesk valid query parameters for api endpoint.
+        """
+        if self._data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            return settings.VALID_CURRENTPRICE_PARAMS
+        elif self._data_type == settings.API_HISTORICAL_DATA_TYPE:
+            return settings.VALID_HISTORICAL_PARAMS
+        else:
+            msg = f'Uncorrect data type setup for {self._data_type}.'
+            logger.warning(f'[CoindeskAPICient] Data type error. {msg}')
+            return None
+
+    def get_supported_currencies(self):
+        """
+        Get Coindesk valid currencies list.
+        """
+        resource = settings.API_ENDPOINTS.get(settings.API_SUPPORTED_CURRENCIES_DATA_TYPE)
+        url = f'{self._api_path}{resource}'
+        try:
+            return self.get(url, {}, False)
+        except Exception as err:
+            msg = err.args[0]
+            logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}.')
+
+    def call(self, raw=False):
+        """
+        Make http request to Coindesk API.
+
+        :param bool raw: enable/disable api response parsing.
+        :return *: api http raw response or data.
+        """
+        try:
+            return self.get(self.url, self.params, raw)
+        except Exception as err:
+            msg = err.args[0]
+            logger.error(f'[CoindeskAPICient] API call error. {msg}.')
+            raise CoindeskAPIClientError(msg)
