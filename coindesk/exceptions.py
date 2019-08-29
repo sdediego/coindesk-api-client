@@ -20,6 +20,13 @@ class BaseError(Exception):
         self.message = message
 
 
+class CoindeskAPIClientError(BaseError):
+    """
+    Handle exception for Coindesk API client.
+    """
+    pass
+
+
 class CoindeskAPIHttpRequestError(BaseError):
     """
     Handle exception for Coindesk API request.
