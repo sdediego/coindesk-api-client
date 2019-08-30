@@ -32,3 +32,10 @@ class CoindeskAPIHttpRequestError(BaseError):
     Handle exception for Coindesk API request.
     """
     pass
+
+
+class CoindeskAPIHttpResponseError(BaseError):
+    """
+    Handle exception for Coindesk API response.
+    """
+    pass
