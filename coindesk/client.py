@@ -3,11 +3,14 @@
 
 import json
 import math
+import json
+import jsonschema
 import requests
 import urllib
 
 from collections import OrderedDict
 from json import JSONDecodeError
+from jsonschema import SchemaError, ValidationError
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
@@ -16,7 +19,8 @@ from time import sleep
 
 from . import settings
 from .exceptions import (CoindeskAPIClientError,
-                         CoindeskAPIHttpRequestError)
+                         CoindeskAPIHttpRequestError,
+                         CoindeskAPIHttpResponseError)
 
 # Custom logger for client module
 fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
@@ -369,3 +373,103 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
             msg = err.args[0]
             logger.error(f'[CoindeskAPICient] API call error. {msg}.')
             raise CoindeskAPIClientError(msg)
+
+
+class CoindeskAPIHttpResponse(object):
+    """
+    Enable Coindesk API response data parsing.
+    """
+
+    def __init__(self, response={}):
+        """
+        Initialize Coindesk API http response.
+
+        :param dict response: response data from Coindesk API.
+        """
+        self.response = response
+        for key, value in response.items():
+            setattr(self, key, value)
+
+    def __str__(self):
+        """
+        Represent class via params string.
+
+        :return str: class representation.
+        """
+        classname = self.__class__.__name__
+        return f'<{classname} - Coindesk api response>'
+
+    @classmethod
+    def parse(cls, response, data_type=None, currency=None):
+        """
+        Parse http response from Coindesk API.
+
+        :param dict response: response data from Coindesk API.
+        :param str data_type: type of data to fetch (currentprice, historical).
+        :param str currency: currency to fetch data in.
+        """
+        if isinstance(response, (dict, str)):
+            try:
+                if not isinstance(response, dict):
+                    response = json.loads(response)
+            except (OverflowError, TypeError) as err:
+                msg = f'Could not decode response. {err.args[0]}.'
+                logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}')
+                raise CoindeskAPIHttpResponseError(msg)
+
+        # TODO:
+        # schema = utils.get_schema(data_type, currency)
+        # cls._validate_response(response, schema)
+        return cls(response)
+
+    @staticmethod
+    def _validate_response(response, schema):
+        """
+        Validate http response from Coindesk API.
+
+        :param dict response: json response from API.
+        :param dict schema: response schema to validate.
+        """
+        try:
+            # TODO:
+            # return jsonschema.validate(response, schema)
+            return
+        except (SchemaError, ValidationError) as err:
+            msg = err.args[0]
+            logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}.')
+            raise CoindeskAPIHttpResponseError(msg)
+
+    def get_response_item(self, item):
+        """
+        Get Coindesk response particular item value.
+
+        :param str item: response item name.
+        :return *: corresponding response item value.
+        """
+        if item not in self.response.keys():
+            msg = f'Provided response item {item} does not exist.'
+            logger.warning(f'[CoindeskAPIHttpResponse] Invalid response item. {msg}')
+        return vars(self).get(item)
+
+    @property
+    def response_items(self):
+        """
+        Get Coindesk response items list.
+
+        :return list: list of response items.
+        """
+        return list(self.response.keys())
+
+    @property
+    def json_response(self):
+        """
+        Get json response from Coindesk API.
+
+        :return json: json serialized response.
+        """
+        try:
+            return json.dumps(self.response)
+        except (OverflowError, TypeError) as err:
+            msg = f'Could not encode json response. {err.args[0]}.'
+            logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}')
+            raise CoindeskAPIHttpResponseError(msg)
