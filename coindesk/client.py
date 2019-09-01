@@ -17,7 +17,7 @@ from os.path import dirname, join
 from requests.exceptions import RequestException
 from time import sleep
 
-from . import settings
+from . import settings, utils
 from .exceptions import (CoindeskAPIClientError,
                          CoindeskAPIHttpRequestError,
                          CoindeskAPIHttpResponseError)
@@ -73,9 +73,8 @@ class CoindeskAPIHttpRequest(object):
         :param bool allow_redirects: enable/disable http verbs redirection.
         :return tuple: validated params.
         """
-        # TODO:
-        # retries = utils.validate_retries(retries)
-        # allow_redirects = utils.validate_redirects(allow_redirects)
+        retries = utils.validate_retries(retries)
+        allow_redirects = utils.validate_redirects(allow_redirects)
         return retries, allow_redirects
 
     @property
@@ -94,8 +93,7 @@ class CoindeskAPIHttpRequest(object):
 
         :param int retries: number of request attempts before failing.
         """
-        # TODO:
-        # retries = utils.validate_retries(retries)
+        retries = utils.validate_retries(retries)
         self._retries = retries
 
     @property
@@ -114,8 +112,7 @@ class CoindeskAPIHttpRequest(object):
 
         :param bool redirects: enable/disable http verbs redirection.
         """
-        # TODO:
-        # redirects = utils.validate_redirects(redirects)
+        redirects = utils.validate_redirects(redirects)
         self._allow_redirects = redirects
 
     def get(self, url, params={}, raw=False):
@@ -249,10 +246,9 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         :param bool allow_redirects: enable/disable http verbs redirection.
         :return cls: CoindeskAPICient class instance.
         """
-        # TODO:
-        # utils.validate_data_type(data_type)
-        # params = utils.validate_params(data_type, params)
-        # retries, allow_redirects = cls.validate(retries, allow_redirects)
+        utils.validate_data_type(data_type)
+        params = utils.validate_params(data_type, params)
+        retries, allow_redirects = cls.validate(retries, allow_redirects)
         return cls(data_type, params, retries, allow_redirects)
 
     def _get_api_path(self):
@@ -303,8 +299,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
 
         :param str value: type of data to fetch (currentprice, historical).
         """
-        # TODO:
-        # self._data_type = utils.validate_data_type(data_type)
+        self._data_type = utils.validate_data_type(data_type)
         if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
             self._params = {}
         self._api_endpoint = self._construct_api_endpoint(data_type, self._params)
@@ -323,8 +318,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
 
         :param dict payload: optional url query parameters.
         """
-        # TODO:
-        # self._params = utils.validate_params(self._data_type, params)
+        self._params = utils.validate_params(self._data_type, params)
         self._api_endpoint = self._construct_api_endpoint(self._data_type, params)
 
     @property
@@ -355,10 +349,13 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         resource = settings.API_ENDPOINTS.get(settings.API_SUPPORTED_CURRENCIES_DATA_TYPE)
         url = f'{self._api_path}{resource}'
         try:
-            return self.get(url, {}, False)
+            currencies = self.get(url, {}, False)
         except Exception as err:
             msg = err.args[0]
             logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}.')
+
+        if currencies: utils.validate_currencies_settings(currencies)
+        return currencies if currencies else utils.get_currencies_settings()
 
     def call(self, raw=False):
         """
@@ -417,9 +414,8 @@ class CoindeskAPIHttpResponse(object):
                 logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}')
                 raise CoindeskAPIHttpResponseError(msg)
 
-        # TODO:
-        # schema = utils.get_schema(data_type, currency)
-        # cls._validate_response(response, schema)
+        schema = utils.get_schema(data_type, currency)
+        cls._validate_response(response, schema)
         return cls(response)
 
     @staticmethod
@@ -431,9 +427,7 @@ class CoindeskAPIHttpResponse(object):
         :param dict schema: response schema to validate.
         """
         try:
-            # TODO:
-            # return jsonschema.validate(response, schema)
-            return
+            return jsonschema.validate(response, schema)
         except (SchemaError, ValidationError) as err:
             msg = err.args[0]
             logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}.')

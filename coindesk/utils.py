@@ -1,0 +1,263 @@
+# encoding: utf-8
+
+import json
+import re
+
+from datetime import datetime
+from logging import getLogger
+from logging.config import fileConfig
+from os.path import dirname, join
+
+from . import schemas, settings
+from .exceptions import (CoindeskAPIClientError,
+                         CoindeskAPIHttpRequestError,
+                         CoindeskAPIHttpResponseError)
+
+# Custom logger for client config module
+fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
+logger = getLogger(__name__)
+
+
+def validate_data_type(data_type):
+    """
+    Validate data type to request.
+
+    :param str data_type: type of data to fetch (currentprice, historical).
+    """
+    if data_type not in settings.VALID_DATA_TYPES:
+        msg = f'Data must be {", ".join(settings.VALID_DATA_TYPES)}.'
+        logger.error(f'[CoinDeskAPIClient] Data error. {msg}')
+        raise CoindeskAPIClientError(msg)
+    return data_type
+
+
+def validate_params(data_type, params):
+    """
+    Validate query parameters of the request.
+
+    :param str data_type: type of data to fetch (currentprice, historical).
+    :param dict params: optional query parameters.
+    :return dict: validated optional query parameters.
+    """
+    if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+        for param in params.keys():
+            if param not in settings.VALID_CURRENTPRICE_PARAMS:
+                msg = f'Unvalid param {param} for {data_type} data.'
+                logger.error(f'[CoinDeskAPIClient] Param error. {msg}')
+                raise CoindeskAPIClientError(msg)
+        if settings.CURRENCY_PARAM in params:
+            validate_currency(params[settings.CURRENCY_PARAM])
+    elif data_type == settings.API_HISTORICAL_DATA_TYPE:
+        for param in params.keys():
+            if param not in settings.VALID_HISTORICAL_PARAMS:
+                msg = f'Unvalid param {param} for {data_type} data.'
+                logger.error(f'[CoinDeskAPIClient] Param error. {msg}')
+                raise CoindeskAPIClientError(msg)
+        if settings.INDEX_PARAM in params:
+            validate_index(params=params)
+        if settings.CURRENCY_PARAM in params:
+            validate_currency(params=params)
+        if settings.START_PARAM in params:
+            validate_date(params=params, flag=settings.START_PARAM)
+        if settings.END_PARAM in params:
+            validate_date(params=params, flag=settings.END_PARAM)
+        if settings.FOR_PARAM in params:
+            validate_for(params=params)
+    else:
+        msg = f'Unable to validate params for data {data_type}.'
+        logger.error(f'[CoinDeskAPIClient] Data error. {msg}')
+        raise CoindeskAPIClientError(msg)
+    return params
+
+
+def validate_index(index=None, params={}):
+    """
+    Validate index query parameter.
+
+    :param str index: index optional url query parameter.
+    :param dict params: optional query parameters.
+    """
+    index = index or params.get(settings.INDEX_PARAM)
+    if index not in settings.VALID_INDEX:
+        msg = f'Index must be {", ".join(settings.VALID_INDEX)}.'
+        logger.error(f'[CoinDeskAPIClient] Index error. {msg}')
+        raise CoindeskAPIClientError(msg)
+
+
+def validate_currency(currency=None, params={}):
+    """
+    Validate currency to request data in.
+
+    :param str currency: currency to fetch data in.
+    :param dict params: optional query parameters.
+    """
+    currency = currency or params.get(settings.CURRENCY_PARAM)
+    currencies = list(map(lambda c: c['currency'], get_currencies_settings()))
+    if currency is not None and currency not in currencies:
+        msg = f'Unvalid provided currency {currency}.'
+        logger.error(f'[CoinDeskAPIClient] Currency error. {msg}')
+        raise CoindeskAPIClientError(msg)
+
+
+def validate_date(date=None, params={}, flag=None):
+    """
+    Validate date query parameter.
+
+    :param str date: datetime at which to start/end the chart.
+    :param dict params: optional query parameters.
+    :param str flag: signalize "start" or "end" date.
+    """
+    date = date or params.get(flag)
+    match = re.search(r'^(?P<date>\d{4}-\d{1,2}-\d{1,2})$', date)
+    if match:
+        try:
+            date = datetime.strptime(match.group('date'), '%Y-%m-%d')
+            params[flag] = date.strftime('%Y-%m-%d')
+        except ValueError as err:
+            msg = f'Unable to parse {flag} param. {err.args[0]}.'
+            logger.error(f'[CoinDeskAPIClient] Date error. {msg}')
+            raise CoindeskAPIClientError(msg)
+    else:
+        msg = f'{flag.capitalize()} must fullfill the pattern YYYY-MM-DD.'
+        logger.error(f'[CoinDeskAPIClient] Date error. {msg}')
+        raise CoindeskAPIClientError(msg)
+
+
+def validate_for(for_param=None, params={}):
+    """
+    Validate for query parameter.
+
+    :param str for: datetime signaling previous day data.
+    :param dict params: optional query parameters.
+    """
+    for_param = for_param or params.get(settings.FOR_PARAM)
+    if for_param not in settings.VALID_FOR:
+        msg = f'For must be {", ".join(settings.VALID_FOR)}.'
+        logger.error(f'[CoinDeskAPIClient] For error. {msg}')
+        raise CoindeskAPIClientError(msg)
+
+
+def validate_retries(retries):
+    """
+    Validate request retries attempt parameter.
+
+    :param int retries: number of request attempts before failing.
+    :return int: max retries number.
+    """
+    if not isinstance(retries, int):
+        msg = 'Retries must be integer number.'
+        logger.error(f'[CoindeskAPIHttpRequest] Retries error. {msg}')
+        raise CoindeskAPIHttpRequestError(msg)
+
+    max_retries = min(retries, settings.REQUEST_MAX_RETRIES)
+    if max_retries < retries:
+        logger.warning(f'[CoinDeskAPIClient] Request max retries. {max_retries}.')
+    return max_retries
+
+
+def validate_redirects(redirects):
+    """
+    Validate http request redirects.
+
+    :param bool redirects: enable/disable http verbs redirection.
+    :return bool: redirects status.
+    """
+    if not isinstance(redirects, bool):
+        msg = 'Allow redirects must be boolean.'
+        logger.error(f'[CoindeskAPIHttpRequest] Redirects error. {msg}')
+        raise CoindeskAPIHttpRequestError(msg)
+    return redirects
+
+
+def validate_currencies_settings(currencies):
+    """
+    Validate supported currencies settings against feched ones.
+
+    :param list currencies: Coindesk API supported currencies.
+    """
+    codes = list(map(lambda c: c['currency'], get_currencies_settings()))
+    supported_codes = list(map(lambda c: c['currency'], currencies))
+    updated = set(supported_codes) == set(codes)
+    if not updated:
+        msg = 'Valid currencies settings out of date.'
+        logger.warning(f'[CoindeskAPIHttpRequest] Currencies warn. {msg}')
+        update_currencies_settings(currencies)
+
+
+def get_currencies_settings():
+    """
+    Get supported currencies settings list.
+
+    :return list: valid currencies list from settings file.
+    """
+    currencies_json = join(dirname(__file__), 'currencies.json')
+    try:
+        with open(currencies_json) as currencies_file:
+            currencies = json.load(currencies_file)
+    except (OSError, IOError) as err:
+        msg = f'Unable to read currencies file. {err.args[0]}.'
+        logger.error(f'[CoindeskAPIClient] File error. {msg}')
+        raise CoindeskAPIClientError(msg)
+    return currencies.get('SUPPORTED_CURRENCIES')
+
+
+def update_currencies_settings(currencies):
+    """
+    Get supported currencies settings list.
+
+    :param list currencies: Coindesk API supported currencies.
+    """
+    currencies_json = join(dirname(__file__), 'currencies.json')
+    supported_currencies = {'SUPPORTED_CURRENCIES': currencies}
+    try:
+        with open(currencies_json, 'w') as outfile:
+            json.dump(supported_currencies, outfile, indent=2)
+    except (OSError, IOError) as err:
+        msg = f'Unable to write currencies file. {err.args[0]}.'
+        logger.error(f'[CoindeskAPIClient] File error. {msg}')
+        raise CoindeskAPIClientError(msg)
+    msg = 'Currencies file successfully updated.'
+    logger.info(f'[CoindeskAPIClient] File updated. {msg}')
+
+
+def get_schema(data_type, currency):
+    """
+    Get schema for corresponding data and currency.
+
+    :param str data_type: type of data to fetch (currentprice, historical).
+    :param str currency: code for allowed currency.
+    :return dict: CoinDesk API response schema.
+    """
+    schema = {}
+    if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+        if currency is not None:
+            schema = get_schema_for_currency(currency)
+        else:
+            schema = schemas.CURRENTPRICE_SCHEMA
+    elif data_type == settings.API_HISTORICAL_DATA_TYPE:
+        schema = schemas.HISTORICAL_SCHEMA
+
+    if not schema:
+        msg = f'No schema for data type {data_type} and currency {currency}.'
+        logger.error(f'[CoinDeskAPIHttpResponse] Schema error. {msg}')
+        raise CoindeskAPIHttpResponseError(msg)
+    return schema
+
+
+def get_schema_for_currency(currency):
+    """
+    Set currentprice schema for specific currency.
+
+    :param str currency: code for allowed currency.
+    :return dict: Updated schema for currency.
+    """
+    schema = schemas.CURRENTPRICE_CODE_SCHEMA
+    schema["properties"]["bpi"].update({
+        currency: {
+            "code": {"type": "string"},
+            "symbol": {"type": "string"},
+            "description": {"type": "string"},
+            "rate_float": {"type": "number"}
+        }
+    })
+    return schema
