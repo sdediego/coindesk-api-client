@@ -142,7 +142,7 @@ def validate_retries(retries):
     Validate request retries attempt parameter.
 
     :param int retries: number of request attempts before failing.
-    :return int: max retries number.
+    :return int: retries number.
     """
     if not isinstance(retries, int):
         msg = 'Retries must be integer number.'
@@ -167,6 +167,38 @@ def validate_redirects(redirects):
         logger.error(f'[CoindeskAPIHttpRequest] Redirects error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
     return redirects
+
+
+def validate_timeout(timeout):
+    """
+    Validate request timeout.
+
+    :param int timeout: number seconds of request timeout.
+    :return int: timeout seconds number.
+    """
+    if not isinstance(timeout, int):
+        msg = 'Timeout must be integer number.'
+        logger.error(f'[CoindeskAPIHttpRequest] Timeout error. {msg}')
+        raise CoindeskAPIHttpRequestError(msg)
+
+    max_timeout = min(timeout, settings.REQUEST_MAX_TIMEOUT)
+    if max_timeout < timeout:
+        logger.warning(f'[CoinDeskAPIClient] Request max retries. {max_timeout}.')
+    return max_timeout
+
+
+def validate_backoff(backoff):
+    """
+    Validate http request backoff.
+
+    :param bool backoff: enable/disable http request backoff.
+    :return bool: backoff status.
+    """
+    if not isinstance(backoff, bool):
+        msg = 'Backoff must be boolean.'
+        logger.error(f'[CoindeskAPIHttpRequest] Backoff error. {msg}')
+        raise CoindeskAPIHttpRequestError(msg)
+    return backoff
 
 
 def validate_currencies_settings(currencies):

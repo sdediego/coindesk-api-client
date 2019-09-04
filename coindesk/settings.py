@@ -47,7 +47,7 @@ VALID_FOR = [
 
 # Coindesk API client request configuration parameters
 REQUEST_MAX_RETRIES = 10
-REQUEST_TIMEOUT = 5
+REQUEST_MAX_TIMEOUT = 30
 REQUEST_HEADERS = {
     'Accept': 'application/json',
     'Accept-Language': 'en-US',

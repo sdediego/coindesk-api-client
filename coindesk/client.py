@@ -2,9 +2,8 @@
 # encoding: utf-8
 
 import json
-import math
-import json
 import jsonschema
+import math
 import requests
 import urllib
 
@@ -32,16 +31,20 @@ class CoindeskAPIHttpRequest(object):
     Enable Coindesk API http request.
     """
 
-    def __init__(self, retries=10, allow_redirects=True):
+    def __init__(self, retries=10, redirects=True, timeout=5, backoff=True):
         """
         Initialize Coindesk API http request making.
 
         :param int retries: number of request attempts before failing.
-        :param bool allow_redirects: enable/disable http verbs redirection.
+        :param bool redirects: enable/disable http verbs redirection.
+        :param int timeout: seconds before request timeout.
+        :param bool backoff: enable/disable http request retry backoff.
         """
         self._session = requests.Session()
         self._retries = retries
-        self._allow_redirects = allow_redirects
+        self._redirects = redirects
+        self._timeout = timeout
+        self._backoff = backoff
 
     def __str__(self):
         """
@@ -53,29 +56,35 @@ class CoindeskAPIHttpRequest(object):
         return f'<{classname} - Coindesk api request>'
 
     @classmethod
-    def start(cls, retries=10, allow_redirects=True):
+    def start(cls, retries=10, redirects=True, timeout=5, backoff=True):
         """
         Get Coindesk API http request instance.
 
         :param int retries: number of request attempts before failing.
-        :param bool allow_redirects: enable/disable http verbs redirection.
+        :param bool redirects: enable/disable http verbs redirection.
+        :param int timeout: seconds before request timeout.
+        :param bool backoff: enable/disable http request retry backoff.
         :return cls: CoindeskAPICient class instance.
         """
-        retries, allow_redirects = cls.validate(retries, allow_redirects)
-        return cls(retries, allow_redirects)
+        retries, redirects, timeout, backoff = cls.validate(retries, redirects, timeout, backoff)
+        return cls(retries, redirects, timeout, backoff)
 
     @staticmethod
-    def validate(retries, allow_redirects):
+    def validate(retries, redirects, timeout, backoff):
         """
         Validate initialization parameters.
 
         :param int retries: number of request attempts before failing.
-        :param bool allow_redirects: enable/disable http verbs redirection.
+        :param bool redirects: enable/disable http verbs redirection.
+        :param int timeout: seconds before request timeout.
+        :param bool backoff: enable/disable http request retry backoff.
         :return tuple: validated params.
         """
         retries = utils.validate_retries(retries)
-        allow_redirects = utils.validate_redirects(allow_redirects)
-        return retries, allow_redirects
+        redirects = utils.validate_redirects(redirects)
+        timeout = utils.validate_timeout(timeout)
+        backoff = utils.validate_backoff(backoff)
+        return retries, redirects, timeout, backoff
 
     @property
     def retries(self):
@@ -99,11 +108,11 @@ class CoindeskAPIHttpRequest(object):
     @property
     def redirects(self):
         """
-        Check if redirects are allowed.
+        Check if requests redirects are allowed.
 
         :return bool: http verbs redirection status.
         """
-        return self._allow_redirects
+        return self._redirects
 
     @redirects.setter
     def redirects(self, redirects):
@@ -113,7 +122,43 @@ class CoindeskAPIHttpRequest(object):
         :param bool redirects: enable/disable http verbs redirection.
         """
         redirects = utils.validate_redirects(redirects)
-        self._allow_redirects = redirects
+        self._redirects = redirects
+
+    @property
+    def timeout(self):
+        """
+        Get number of seconds for request timeout.
+        """
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, timeout):
+        """
+        Set number of seconds for request timeout.
+
+        :param int timeout: seconds before request timeout.
+        """
+        timeout = utils.validate_timeout(timeout)
+        self._timeout = timeout
+
+    @property
+    def backoff(self):
+        """
+        Check if requests retries backoff is enabled.
+
+        :return bool: request retries backoff status.
+        """
+        return self._backoff
+
+    @backoff.setter
+    def backoff(self, backoff):
+        """
+        Set/unset request backoff.
+
+        :param bool backoff: enable/disable http requests backoff.
+        """
+        backoff = utils.validate_backoff(backoff)
+        self._backoff = backoff
 
     def get(self, url, params={}, raw=False):
         """
@@ -168,7 +213,7 @@ class CoindeskAPIHttpRequest(object):
                 with self._session as request:
                     response = request.get(url=url, **options)
             except RequestException as err:
-                timeout = math.pow(2, retry)
+                timeout = math.pow(2, retry) if self.backoff else 0
                 logger.error(f'[CoindeskAPIHttpRequest] Retry {retry} request. {err.args[0]}.')
                 logger.error(f'[CoindeskAPIHttpRequest] Waiting {timeout} ms.')
                 sleep(timeout)
@@ -201,7 +246,7 @@ class CoindeskAPIHttpRequest(object):
         return {
             'headers': OrderedDict(settings.REQUEST_HEADERS),
             'allow_redirects': self.redirects,
-            'timeout': settings.REQUEST_TIMEOUT
+            'timeout': self.timeout
         }
 
 
@@ -210,20 +255,22 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
     Enable Coindesk API use.
     """
 
-    def __init__(self, data_type=None, params={}, retries=10, allow_redirects=True):
+    def __init__(self, data_type=None, params={}, retries=10, redirects=True, timeout=5, backoff=True):
         """
         Initialize Coindesk API client.
 
         :param str data_type: type of data to fetch (currentprice, historical).
         :param dict params: optional url query parameters.
         :param int retries: number of request attempts before failing.
-        :param bool allow_redirects: enable/disable http verbs redirection.
+        :param bool redirects: enable/disable http verbs redirection.
+        :param int timeout: seconds before request timeout.
+        :param bool backoff: enable/disable http request retry backoff.
         """
+        super(CoindeskAPIClient, self).__init__(retries, redirects, timeout, backoff)
         self._data_type = data_type
         self._params = params
         self._api_path = self._get_api_path()
         self._api_endpoint = self._construct_api_endpoint(data_type, params)
-        super(CoindeskAPIClient, self).__init__(retries, allow_redirects)
 
     def __str__(self):
         """
@@ -236,20 +283,22 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         return f'<{classname}:\nendpoint: {endpoint}>'
 
     @classmethod
-    def start(cls, data_type=None, params={}, retries=10, allow_redirects=True):
+    def start(cls, data_type=None, params={}, retries=10, redirects=True, timeout=5, backoff=True):
         """
         Get Coindesk API client instance.
 
         :param str data_type: type of data to fetch (currentprice, historical).
         :param dict params: optional url query parameters.
         :param int retries: number of request attempts before failing.
-        :param bool allow_redirects: enable/disable http verbs redirection.
+        :param bool redirects: enable/disable http verbs redirection.
+        :param int timeout: seconds before request timeout.
+        :param bool backoff: enable/disable http request retry backoff.
         :return cls: CoindeskAPICient class instance.
         """
-        utils.validate_data_type(data_type)
+        data_type = utils.validate_data_type(data_type)
         params = utils.validate_params(data_type, params)
-        retries, allow_redirects = cls.validate(retries, allow_redirects)
-        return cls(data_type, params, retries, allow_redirects)
+        retries, redirects, timeout, backoff = cls.validate(retries, redirects, timeout, backoff)
+        return cls(data_type, params, retries, redirects, timeout, backoff)
 
     def _get_api_path(self):
         """
