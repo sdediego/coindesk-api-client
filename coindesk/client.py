@@ -186,7 +186,7 @@ class CoindeskAPIHttpRequest(object):
             data = response
             msg = f'Status {status_code}. Raw response.'
             logger.info(f'[CoindeskAPIHttpRequest] Request success. {msg}')
-        if response.text:
+        elif response.text:
             try:
                 data = response.json()
             except JSONDecodeError as err:

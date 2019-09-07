@@ -1,7 +1,9 @@
 # encoding: utf-8
 
+from .utils import find_version
+
 # Coindesk API client settings
-API_CLIENT_VERSION = '0.1.0'
+API_CLIENT_VERSION = find_version('__init__.py')
 API_PROTOCOL = 'https'
 API_HOST = 'api.coindesk.com'
 API_PATH = '/v1/bpi'
@@ -52,5 +54,6 @@ REQUEST_HEADERS = {
     'Accept': 'application/json',
     'Accept-Language': 'en-US',
     'Cache-Control': 'no-cache',
+    'Connection': 'close',
     'X-API-client-version': API_CLIENT_VERSION
 }

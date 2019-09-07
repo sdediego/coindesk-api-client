@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import codecs
 import json
 import re
 
@@ -293,3 +294,31 @@ def get_schema_for_currency(currency):
         }
     })
     return schema
+
+
+def find_version(*path_parts):
+    """
+    Get current coindesk api client version.
+
+    :param tuple path_parts: path parts for version module.
+    :return str: api client version.
+    """
+    version = read(*path_parts)
+    match = re.search(r'^__version__ = ["\'](?P<version>[^"\']*)["\']', version, re.M)
+    if not match:
+        msg = 'Unable to find module version.'
+        logger.error(f'[find_version] Setup error. {msg}')
+        raise RuntimeError(msg)
+    return str(match.group('version'))
+
+
+def read(*path_parts):
+    """
+    Get version module.
+
+    :param tuple path_parts: path parts for version module.
+    :return obj: module with version.
+    """
+    base_dir = dirname(__file__)
+    file_path = join(base_dir, *path_parts)
+    return codecs.open(file_path, encoding='utf-8').read()
