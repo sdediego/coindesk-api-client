@@ -31,22 +31,36 @@ A step by step series of examples:
 Get currentprice price for Bitcoin in json format
 ```python
 from coindesk.client import CoindeskAPIClient
-client = CoindeskAPIClient.start('currentprice')
-response = client.call()
+api_client = CoindeskAPIClient.start('currentprice')
+response = api_client.get()
+```
+
+Get currentprice price for Bitcoin in other currency than USD
+```python
+from coindesk.client import CoindeskAPIClient
+api_client = CoindeskAPIClient.start('currentprice', {'currency': 'EUR'})
+response = api_client.get()
 ```
 
 Get historical price for Bitcoin in json format
 ```python
 from coindesk.client import CoindeskAPIClient
-client = CoindeskAPIClient.start('historical')
-response = client.call()
+api_client = CoindeskAPIClient.start('historical')
+response = api_client.get()
 ```
 
 Get historical price for Bitcoin providing optional parameters
 ```python
 from coindesk.client import CoinDeskAPIClient
-client = CoindeskAPIClient.start('historical', {'currency': 'EUR', 'start': '2018-01-01', 'end': '2018-03-25'})
-response = client.call()
+api_client = CoindeskAPIClient.start('historical', {'start': '2018-01-01', 'end': '2018-03-25'})
+response = api_client.get()
+```
+
+Get supported currencies to fetch Bitcoin price in
+```python
+from coindesk.client import CoindeskAPIClient
+api_client = CoindeskAPIClient()
+supported_currencies = api_client.get_supported_currencies()
 ```
 
 Full documentation for CoinDesk API is available at https://www.coindesk.com/api/.

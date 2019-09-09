@@ -395,18 +395,20 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         Get Coindesk valid currencies list.
         """
+        protocol, host, path = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
         resource = settings.API_ENDPOINTS.get(settings.API_SUPPORTED_CURRENCIES_DATA_TYPE)
-        url = f'{self._api_path}{resource}'
+        url = f'{protocol}://{host}{path}/{resource}'
         try:
-            currencies = self.get(url, {}, False)
+            currencies = super(CoindeskAPIClient, self).get(url, {}, False)
         except Exception as err:
             msg = err.args[0]
-            logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}.')
+            logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}')
 
+        print(currencies)
         if currencies: utils.validate_currencies_settings(currencies)
         return currencies if currencies else utils.get_currencies_settings()
 
-    def call(self, raw=False):
+    def get(self, raw=False):
         """
         Make http request to Coindesk API.
 
@@ -414,7 +416,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         :return *: api http raw response or data.
         """
         try:
-            return self.get(self.url, self.params, raw)
+            return super(CoindeskAPIClient, self).get(self.url, self.params, raw)
         except Exception as err:
             msg = err.args[0]
             logger.error(f'[CoindeskAPICient] API call error. {msg}.')

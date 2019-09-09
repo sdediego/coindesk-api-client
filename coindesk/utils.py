@@ -26,7 +26,7 @@ def validate_data_type(data_type):
     :param str data_type: type of data to fetch (currentprice, historical).
     """
     if data_type not in settings.VALID_DATA_TYPES:
-        msg = f'Data must be {", ".join(settings.VALID_DATA_TYPES)}.'
+        msg = f'Data must be {" or ".join(settings.VALID_DATA_TYPES)}.'
         logger.error(f'[CoinDeskAPIClient] Data error. {msg}')
         raise CoindeskAPIClientError(msg)
     return data_type
@@ -80,7 +80,7 @@ def validate_index(index=None, params={}):
     """
     index = index or params.get(settings.INDEX_PARAM)
     if index not in settings.VALID_INDEX:
-        msg = f'Index must be {", ".join(settings.VALID_INDEX)}.'
+        msg = f'Index must be {" or ".join(settings.VALID_INDEX)}.'
         logger.error(f'[CoinDeskAPIClient] Index error. {msg}')
         raise CoindeskAPIClientError(msg)
 
@@ -133,7 +133,7 @@ def validate_for(for_param=None, params={}):
     """
     for_param = for_param or params.get(settings.FOR_PARAM)
     if for_param not in settings.VALID_FOR:
-        msg = f'For must be {", ".join(settings.VALID_FOR)}.'
+        msg = f'For must be {settings.VALID_FOR[0]}.'
         logger.error(f'[CoinDeskAPIClient] For error. {msg}')
         raise CoindeskAPIClientError(msg)
 
@@ -149,7 +149,6 @@ def validate_retries(retries):
         msg = 'Retries must be integer number.'
         logger.error(f'[CoindeskAPIHttpRequest] Retries error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
-
     max_retries = min(retries, settings.REQUEST_MAX_RETRIES)
     if max_retries < retries:
         logger.warning(f'[CoinDeskAPIClient] Request max retries. {max_retries}.')
@@ -181,7 +180,6 @@ def validate_timeout(timeout):
         msg = 'Timeout must be integer number.'
         logger.error(f'[CoindeskAPIHttpRequest] Timeout error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
-
     max_timeout = min(timeout, settings.REQUEST_MAX_TIMEOUT)
     if max_timeout < timeout:
         logger.warning(f'[CoinDeskAPIClient] Request max retries. {max_timeout}.')
@@ -210,8 +208,7 @@ def validate_currencies_settings(currencies):
     """
     codes = list(map(lambda c: c['currency'], get_currencies_settings()))
     supported_codes = list(map(lambda c: c['currency'], currencies))
-    updated = set(supported_codes) == set(codes)
-    if not updated:
+    if not set(supported_codes) == set(codes):
         msg = 'Valid currencies settings out of date.'
         logger.warning(f'[CoindeskAPIHttpRequest] Currencies warn. {msg}')
         update_currencies_settings(currencies)
