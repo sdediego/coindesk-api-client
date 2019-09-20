@@ -2,5 +2,5 @@
 
 __author__ = 'Sergio de Diego'
 __url__ = 'github.com/sdediego'
-__version__ = '0.1.0'
-__date__ = 'August 2019'
+__version__ = '0.1.1'
+__date__ = 'September 2019'

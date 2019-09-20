@@ -44,9 +44,12 @@ setup(
     author='Sergio de Diego',
     author_email='sergiodediego@outlook.com',
     url='https://github.com/sdediego/coindesk-api-client',
-    download_url='https://github.com/sdediego/coindesk-api-client/archive/v0.1.0-alpha.tar.gz',
+    download_url='https://github.com/sdediego/coindesk-api-client/archive/v0.1.1-alpha.tar.gz',
     packages=['coindesk'],
-    install_requires=read('requirements.txt').splitlines(),
+    install_requires=[
+        "jsonschema>=3.0.2",
+        "requests>=2.22.0",
+    ],
     license='MIT',
     keywords='coindesk bitcoin blockchain api client Python',
     classifiers=[
@@ -61,6 +64,6 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Topic :: Office/Business :: Financial',
         'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 )
