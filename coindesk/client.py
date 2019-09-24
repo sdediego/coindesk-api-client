@@ -4,10 +4,12 @@
 import json
 import jsonschema
 import math
+import re
 import requests
 import urllib
 
 from collections import OrderedDict
+from furl import furl as URL
 from json import JSONDecodeError
 from jsonschema import SchemaError, ValidationError
 from logging import getLogger
@@ -268,8 +270,6 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         super(CoindeskAPIClient, self).__init__(retries, redirects, timeout, backoff)
         self._data_type = data_type
-        self._params = params
-        self._api_path = self._get_api_path()
         self._api_endpoint = self._construct_api_endpoint(data_type, params)
 
     def __str__(self):
@@ -300,24 +300,23 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         retries, redirects, timeout, backoff = cls.validate(retries, redirects, timeout, backoff)
         return cls(data_type, params, retries, redirects, timeout, backoff)
 
-    def _get_api_path(self):
+    def _get_api_url_components(self):
         """
-        Get Coindesk api base url.
+        Get Coindesk api base url components.
 
-        :return str: Coindesk api base url.
+        :return list: Coindesk api base url components.
         """
-        protocol, host, path = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
-        api_path = f'{protocol}://{host}{path}'
-        return self._clean_api_path(api_path)
+        components = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
+        return [self._clean_api_component(component) for component in components]
 
-    def _clean_api_path(self, api_path):
+    def _clean_api_component(self, component):
         """
-        Clean Coindesk api base url.
+        Clean Coindesk api base url components.
 
-        :param str api_path: Coindesk api base url.
-        :return str: cleaned Coindesk api base url.
+        :param str component: Coindesk api base url component.
+        :return str: Coindesk api base url cleaned component.
         """
-        return f'{api_path}/' if not api_path.endswith('/') else api_path
+        return re.sub('://', '', component).strip('/')
 
     def _construct_api_endpoint(self, data_type, params):
         """
@@ -327,12 +326,16 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         :param dict params: optional query parameters.
         :return str: Coindesk api endpoint for correspondig data resource.
         """
+        scheme, host, path = self._get_api_url_components()
         resource = settings.API_ENDPOINTS.get(data_type)
         if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
             currency_param = params.pop(settings.CURRENCY_PARAM, '')
             currency = f'/{currency_param}' if currency_param else currency_param
             resource = resource.format(currency=currency)
-        return f'{self._api_path}{resource}'
+        path = f'{path}/{self._clean_api_component(resource)}'
+        api_endpoint = URL(scheme=scheme, host=host, path=path, args=params)
+        utils.validate_url(api_endpoint.url)
+        return api_endpoint
 
     @property
     def data_type(self):
@@ -346,36 +349,113 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         Set Coindesk API client data type and corresponding api path attribute.
 
-        :param str value: type of data to fetch (currentprice, historical).
+        :param str data_type: type of data to fetch (currentprice, historical).
         """
         self._data_type = utils.validate_data_type(data_type)
-        if data_type == settings.API_CURRENTPRICE_DATA_TYPE:
-            self._params = {}
-        self._api_endpoint = self._construct_api_endpoint(data_type, self._params)
-
-    @property
-    def params(self):
-        """
-        Get Coindesk api endpoint optional query parameters.
-        """
-        return self._params
-
-    @params.setter
-    def params(self, params):
-        """
-        Set Coindesk API client optinal query parameters.
-
-        :param dict payload: optional url query parameters.
-        """
-        self._params = utils.validate_params(self._data_type, params)
-        self._api_endpoint = self._construct_api_endpoint(self._data_type, params)
+        self._api_endpoint = self._construct_api_endpoint(data_type, {})
 
     @property
     def url(self):
         """
         Get Coindesk api endpoint.
         """
-        return self._api_endpoint
+        return self._api_endpoint.url
+
+    @property
+    def path(self):
+        """
+        Get Coindesk api endpoint path.
+        """
+        return str(self._api_endpoint.path)
+
+    @property
+    def params(self):
+        """
+        Get Coindesk api endpoint optional query parameters.
+        """
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            if self.path.endswith('currentprice.json'): return []
+            currency = self._api_endpoint.path.segments[-1].rstrip('.json')
+            return [('currency', currency)]
+        elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
+            return self._api_endpoint.query.params.items()
+
+    @params.setter
+    def params(self, params):
+        """
+        Set Coindesk API client optinal query parameters.
+        This will overwrite all existing params.
+
+        :param dict params: optional url query parameters.
+        """
+        params = utils.validate_params(self.data_type, params)
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            self._api_endpoint = self._construct_api_endpoint(self.data_type, params)
+        elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
+            self._api_endpoint.query.params = params
+
+    def has_param(self, key):
+        """
+        Check if Coindesk API endpoint has certain param.
+
+        :param str key: query param name.
+        :return bool: true/false has param response.
+        """
+        has_param = param in self._api_endpoint.query.params
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            has_param = not self.path.endswith('currentprice.json')
+        return has_param
+
+    def add_param(self, param):
+        """
+        Add Coindesk API client optinal query parameter.
+
+        :param dict param: optional url query parameter.
+        """
+        param = utils.validate_params(self.data_type, param)
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            self._api_endpoint = self._construct_api_endpoint(self.data_type, param)
+        elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
+            if self.has_param(list(param.keys())[0]):
+                self.delete_param(param)
+            self._api_endpoint.add(args=param)
+
+    def add_many_params(self, params):
+        """
+        Add many Coindesk API client optinal query parameters.
+
+        :param dict params: optional url query parameters.
+        """
+        for key, value in params.items():
+            self.add_param({key: value})
+
+    def delete_param(self, param):
+        """
+        Delete Coindesk API client optinal query parameter.
+
+        :param dict param: optional url query parameter.
+        """
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+            if not self.path.endswith('currentprice.json'):
+                segments = self._api_endpoint.path.segments
+                self._api_endpoint.path = f'{"/".join(segments[:-1])}.json'
+                deleted_param = segments[-1].rstrip('.json')
+        elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
+            deleted_param = self._api_endpoint.query.params.pop(param, None)
+
+        if not deleted_param:
+            msg = f'Query parameter {param} does not exist.'
+            logger.warning(f'[CoindeskAPIClient] Delete param warn. {msg}')
+        return deleted_param if deleted_param else None
+
+    def delete_many_params(self, params):
+        """
+        Delete many Coindesk API client optinal query parameters.
+
+        :param dict params: optional url query parameters.
+        """
+        for key, value in params.items():
+            self.delete_param({key: value})
 
     @property
     def valid_params(self):
@@ -395,28 +475,29 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         Get Coindesk valid currencies list.
         """
-        protocol, host, path = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
-        resource = settings.API_ENDPOINTS.get(settings.API_SUPPORTED_CURRENCIES_DATA_TYPE)
-        url = f'{protocol}://{host}{path}/{resource}'
+        scheme, host, path = self._get_api_url_components()
+        resource = settings.API_ENDPOINTS.get('supported-currencies')
+        path = f'{path}/{self._clean_api_component(resource)}'
+        url = URL(scheme=scheme, host=host, path=path)
         try:
-            currencies = super(CoindeskAPIClient, self).get(url, {}, False)
+            utils.validate_url(url.url)
+            currencies = super(CoindeskAPIClient, self).get(url.url, {}, False)
         except Exception as err:
             msg = err.args[0]
-            logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}')
+            logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}.')
 
-        print(currencies)
         if currencies: utils.validate_currencies_settings(currencies)
         return currencies if currencies else utils.get_currencies_settings()
 
     def get(self, raw=False):
         """
-        Make http request to Coindesk API.
+        Make http get request to Coindesk API.
 
         :param bool raw: enable/disable api response parsing.
         :return *: api http raw response or data.
         """
         try:
-            return super(CoindeskAPIClient, self).get(self.url, self.params, raw)
+            return super(CoindeskAPIClient, self).get(self.url, {}, raw)
         except Exception as err:
             msg = err.args[0]
             logger.error(f'[CoindeskAPICient] API call error. {msg}.')

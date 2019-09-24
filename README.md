@@ -1,4 +1,4 @@
-# coindesk-api-client
+# CoinDesk API client
 
 Powered by [![CoinDesk]()](https://www.coindesk.com/api/)
 
@@ -15,18 +15,21 @@ These instructions will get you a copy of the project on your local system.
 
 #### Prerequisites
 
-CoinDesk API Client uses a number of open source projects to work properly:
+CoinDesk API client uses a number of open source projects to work properly:
 
+* [furl] - URL parsing and manipulation made easy
 * [jsonschema] - An implementation of JSON Schema validation for Python
 * [requests] - Python HTTP for Humans
 
-And of course CoinDesk API Client itself is open source with a [public repository][coindesk-api-client] on GitHub.
+And of course CoinDesk API client itself is open source with a [public repository][coindesk-api-client] on GitHub.
 
 #### Installation
 
+Intall the package from Pypi using ``pip install -U coindesk``.
+
 #### Quick Start
 
-A step by step series of examples:
+A series of simple examples:
 
 Get currentprice price for Bitcoin in json format
 ```python
@@ -52,7 +55,7 @@ response = api_client.get()
 Get historical price for Bitcoin providing optional parameters
 ```python
 from coindesk.client import CoinDeskAPIClient
-api_client = CoindeskAPIClient.start('historical', {'start': '2018-01-01', 'end': '2018-03-25'})
+api_client = CoindeskAPIClient.start('historical', {'start': '2018-01-01'})
 response = api_client.get()
 ```
 
@@ -76,5 +79,6 @@ MIT
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen.)
 
    [coindesk-api-client]: <https://github.com/sdediego/coindesk-api-client>
+   [furl]: <https://github.com/gruns/furl>
    [jsonschema]: <https://github.com/Julian/jsonschema>
    [requests]: <https://github.com/requests/requests>

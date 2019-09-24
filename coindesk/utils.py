@@ -200,6 +200,23 @@ def validate_backoff(backoff):
     return backoff
 
 
+def validate_url(url):
+    """
+    Validate Coindesk constructed url.
+
+    :param str url: Coindesk api endpoint.
+    """
+    regex = re.compile(
+        r'^(?:http)s?://'
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?))'
+        r'(?:[/?#][^\s]*)?$', re.IGNORECASE)
+    match = regex.search(url)
+    if not match:
+        msg = f'Invalid url.'
+        logger.error(f'[CoinDeskAPIClient] Url error. {msg}')
+        raise CoindeskAPIClientError(msg)
+
+
 def validate_currencies_settings(currencies):
     """
     Validate supported currencies settings against feched ones.
@@ -208,7 +225,7 @@ def validate_currencies_settings(currencies):
     """
     codes = list(map(lambda c: c['currency'], get_currencies_settings()))
     supported_codes = list(map(lambda c: c['currency'], currencies))
-    if not set(supported_codes) == set(codes):
+    if not set(codes) == set(supported_codes):
         msg = 'Valid currencies settings out of date.'
         logger.warning(f'[CoindeskAPIHttpRequest] Currencies warn. {msg}')
         update_currencies_settings(currencies)
