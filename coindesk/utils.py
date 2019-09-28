@@ -3,7 +3,6 @@
 import codecs
 import json
 import re
-
 from datetime import datetime
 from logging import getLogger
 from logging.config import fileConfig
@@ -145,8 +144,8 @@ def validate_retries(retries):
     :param int retries: number of request attempts before failing.
     :return int: retries number.
     """
-    if not isinstance(retries, int):
-        msg = 'Retries must be integer number.'
+    if type(retries) is not int or retries < 0:
+        msg = 'Retries must be zero or positive integer number.'
         logger.error(f'[CoindeskAPIHttpRequest] Retries error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
     max_retries = min(retries, settings.REQUEST_MAX_RETRIES)
@@ -163,7 +162,7 @@ def validate_redirects(redirects):
     :return bool: redirects status.
     """
     if not isinstance(redirects, bool):
-        msg = 'Allow redirects must be boolean.'
+        msg = 'Redirects must be boolean.'
         logger.error(f'[CoindeskAPIHttpRequest] Redirects error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
     return redirects
@@ -176,8 +175,8 @@ def validate_timeout(timeout):
     :param int timeout: number seconds of request timeout.
     :return int: timeout seconds number.
     """
-    if not isinstance(timeout, int):
-        msg = 'Timeout must be integer number.'
+    if type(timeout) is not int or timeout < 0:
+        msg = 'Timeout must be zero or positive integer number.'
         logger.error(f'[CoindeskAPIHttpRequest] Timeout error. {msg}')
         raise CoindeskAPIHttpRequestError(msg)
     max_timeout = min(timeout, settings.REQUEST_MAX_TIMEOUT)
@@ -215,6 +214,7 @@ def validate_url(url):
         msg = f'Invalid url.'
         logger.error(f'[CoinDeskAPIClient] Url error. {msg}')
         raise CoindeskAPIClientError(msg)
+    return url
 
 
 def validate_currencies_settings(currencies):
