@@ -1,24 +1,24 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
+import asyncio
 import json
-import jsonschema
 import math
 import re
-import requests
-import urllib
-
 from collections import OrderedDict
-from furl import furl as URL
 from json import JSONDecodeError
-from jsonschema import SchemaError, ValidationError
 from logging import getLogger
 from logging.config import fileConfig
 from os.path import dirname, join
+
+import aiohttp
+import jsonschema
+import requests
+from furl import furl as URL
+from jsonschema import SchemaError, ValidationError
 from requests.exceptions import RequestException
-from time import sleep
 
 from . import settings, utils
+from .decorators import async_event_loop
 from .exceptions import (CoindeskAPIClientError,
                          CoindeskAPIHttpRequestError,
                          CoindeskAPIHttpResponseError)
@@ -42,7 +42,6 @@ class CoindeskAPIHttpRequest(object):
         :param int timeout: seconds before request timeout.
         :param bool backoff: enable/disable http request retry backoff.
         """
-        self._session = requests.Session()
         self._retries = retries
         self._redirects = redirects
         self._timeout = timeout
@@ -162,84 +161,20 @@ class CoindeskAPIHttpRequest(object):
         backoff = utils.validate_backoff(backoff)
         self._backoff = backoff
 
-    def get(self, url, params={}, raw=False):
+    @async_event_loop
+    async def get(self, url, raw=False):
         """
         Retrieve response object/data from Coindesk API url.
 
         :param str url: api resource locator.
-        :param dict params: optional query parameters.
         :param bool raw: enable/disable api response parsing.
         :return *: api http raw response or response data.
         """
-        data = None
-        response = self._http_request(url, params)
-        status_code = response.status_code
-
-        if status_code == requests.codes.not_found:
-            msg = f'Status {status_code}.'
-            logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
-            raise CoindeskAPIHttpRequestError(msg)
-        if status_code == requests.codes.forbidden:
-            msg = f'Status {status_code}.'
-            logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
-            raise CoindeskAPIHttpRequestError(msg)
-
-        if raw:
-            data = response
-            msg = f'Status {status_code}. Raw response.'
-            logger.info(f'[CoindeskAPIHttpRequest] Request success. {msg}')
-        elif response.text:
-            try:
-                data = response.json()
-            except JSONDecodeError as err:
-                msg = f'Could not decode json data. {err.args[0]}.'
-                logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
-                raise CoindeskAPIHttpRequestError(msg)
-            msg = f'status {status_code}. JSON response.'
-            logger.info(f'[CoindeskAPIHttpRequest] Request success. {msg}')
-        return data
-
-    def _http_request(self, url, params):
-        """
-        Make http request to Coindesk API.
-
-        :param str url: api resource locator.
-        :param dict params: optional query parameters.
-        :return obj: http response object.
-        """
-        url = self._get_url_with_params(url, params)
         options = self._get_request_options()
-
-        for retry in range(1, self.retries + 1):
-            try:
-                with self._session as request:
-                    response = request.get(url=url, **options)
-            except RequestException as err:
-                timeout = math.pow(2, retry) if self.backoff else 0
-                logger.error(f'[CoindeskAPIHttpRequest] Retry {retry} request. {err.args[0]}.')
-                logger.error(f'[CoindeskAPIHttpRequest] Waiting {timeout} ms.')
-                sleep(timeout)
-            else:
-                msg = f'Status {response.status_code}. Coindesk API url {response.url}.'
-                logger.info(f'[CoindeskAPIHttpRequest] Request success. {msg}')
-                return response
-        else:
-            msg = f'No response from Coindesk API url {url}.'
-            logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
-            raise CoindeskAPIHttpRequestError(msg)
-
-    def _get_url_with_params(self, url, params):
-        """
-        Add params to base url.
-
-        :param str url: api resource locator.
-        :param dict params: optional query parameters.
-        :return str: api resource locator with optional params.
-        """
-        if params:
-            params = urllib.parse.urlencode(params)
-            url = f'{url}?{params}'
-        return urllib.parse.quote(url, '=/?:&')
+        async with aiohttp.ClientSession() as session:
+            response = await self._http_request(session, url, options)
+        self._check_response_status(response)
+        return response if raw else await self._get_json_response(response)
 
     def _get_request_options(self):
         """
@@ -250,6 +185,74 @@ class CoindeskAPIHttpRequest(object):
             'allow_redirects': self.redirects,
             'timeout': self.timeout
         }
+
+    async def _http_request(self, session, url, options):
+        """
+        Make asynchronous http request to Coindesk API.
+
+        :param obj session: client session.
+        :param str url: optional query parameters.
+        :param dict options: http request options.
+        :return obj: http response object.
+        """
+        for retry in range(1, self.retries + 1):
+            try:
+                return await session.get(url, **options)
+            except RequestException as err:
+                timeout = self._wait_exp_backoff(retry) if self.backoff else 0
+                logger.error(f'[CoindeskAPIHttpRequest] Retry {retry} request. {err.args[0]}.')
+                logger.error(f'[CoindeskAPIHttpRequest] Waiting {timeout} ms.')
+                await asyncio.sleep(timeout / 10)
+        else:
+            msg = f'No response from Coindesk API url {url}.'
+            logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
+            raise CoindeskAPIHttpRequestError(msg)
+
+    def _wait_exp_backoff(self, retry):
+        """
+        Calculate exponential backoff time.
+
+        :param int retries: number of request attempts before failing.
+        :return int: time to wait between http requests retries.
+        """
+        return math.pow(2, retry)
+
+    def _check_response_status(self, response):
+        """
+        Verify http response status code.
+
+        :param int status: http response status code.
+        """
+        status = str(response.status)
+        msg = f'Status code {status} - {response.reason}.'
+        if status.startswith('1'):
+            logger.info(f'[CoindeskAPIHttpRequest] Request info. {msg}')
+        elif status.startswith('2'):
+            logger.info(f'[CoindeskAPIHttpRequest] Request success. {msg}')
+        elif status.startswith('3'):
+            logger.info(f'[CoindeskAPIHttpRequest] Request redirect. {msg}')
+        elif status.startswith('4'):
+            logger.error(f'[CoindeskAPIHttpRequest] Client error. {msg}')
+            raise CoindeskAPIHttpRequestError(msg)
+        elif status.startswith('5'):
+            logger.error(f'[CoindeskAPIHttpRequest] Server error. {msg}')
+            raise CoindeskAPIHttpRequestError(msg)
+
+    async def _get_json_response(self, response):
+        """
+        Return response json data format.
+
+        :param obj response: http response object.
+        :return json: response json data.
+        """
+        try:
+            data = await response.json(content_type=None)
+        except JSONDecodeError as err:
+            msg = f'Could not decode json data. {err.args[0]}.'
+            logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
+            raise CoindeskAPIHttpRequestError(msg)
+        logger.info('[CoindeskAPIHttpRequest] JSON data decoded.')
+        return data
 
 
 class CoindeskAPIClient(CoindeskAPIHttpRequest):
@@ -300,24 +303,6 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         retries, redirects, timeout, backoff = cls.validate(retries, redirects, timeout, backoff)
         return cls(data_type, params, retries, redirects, timeout, backoff)
 
-    def _get_api_url_components(self):
-        """
-        Get Coindesk api base url components.
-
-        :return list: Coindesk api base url components.
-        """
-        components = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
-        return [self._clean_api_component(component) for component in components]
-
-    def _clean_api_component(self, component):
-        """
-        Clean Coindesk api base url components.
-
-        :param str component: Coindesk api base url component.
-        :return str: Coindesk api base url cleaned component.
-        """
-        return re.sub('://', '', component).strip('/')
-
     def _construct_api_endpoint(self, data_type, params):
         """
         Get Coindesk api endpoint.
@@ -336,6 +321,24 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         api_endpoint = URL(scheme=scheme, host=host, path=path, args=params)
         utils.validate_url(api_endpoint.url)
         return api_endpoint
+
+    def _get_api_url_components(self):
+        """
+        Get Coindesk api base url components.
+
+        :return list: Coindesk api base url components.
+        """
+        components = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
+        return [self._clean_api_component(component) for component in components]
+
+    def _clean_api_component(self, component):
+        """
+        Clean Coindesk api base url components.
+
+        :param str component: Coindesk api base url component.
+        :return str: Coindesk api base url cleaned component.
+        """
+        return re.sub('://', '', component).strip('/')
 
     @property
     def data_type(self):
@@ -401,8 +404,8 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         :param str key: query param name.
         :return bool: true/false has param response.
         """
-        has_param = param in self._api_endpoint.query.params
-        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+        has_param = key in self._api_endpoint.query.params
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE and key == settings.CURRENCY_PARAM:
             has_param = not self.path.endswith('currentprice.json')
         return has_param
 
@@ -416,8 +419,8 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
             self._api_endpoint = self._construct_api_endpoint(self.data_type, param)
         elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
-            if self.has_param(list(param.keys())[0]):
-                self.delete_param(param)
+            key = list(param.keys())[0]
+            if self.has_param(key): self.delete_param(key)
             self._api_endpoint.add(args=param)
 
     def add_many_params(self, params):
@@ -435,6 +438,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
 
         :param dict param: optional url query parameter.
         """
+        deleted_param = None
         if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
             if not self.path.endswith('currentprice.json'):
                 segments = self._api_endpoint.path.segments
@@ -443,10 +447,10 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
             deleted_param = self._api_endpoint.query.params.pop(param, None)
 
-        if not deleted_param:
+        if deleted_param is None:
             msg = f'Query parameter {param} does not exist.'
-            logger.warning(f'[CoindeskAPIClient] Delete param warn. {msg}')
-        return deleted_param if deleted_param else None
+            logger.warning(f'[CoindeskAPIClient] Delete param. {msg}')
+        return deleted_param
 
     def delete_many_params(self, params):
         """
@@ -462,12 +466,12 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         Get Coindesk valid query parameters for api endpoint.
         """
-        if self._data_type == settings.API_CURRENTPRICE_DATA_TYPE:
+        if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
             return settings.VALID_CURRENTPRICE_PARAMS
-        elif self._data_type == settings.API_HISTORICAL_DATA_TYPE:
+        elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
             return settings.VALID_HISTORICAL_PARAMS
         else:
-            msg = f'Uncorrect data type setup for {self._data_type}.'
+            msg = f'Uncorrect data type setup for {self.data_type}.'
             logger.warning(f'[CoindeskAPICient] Data type error. {msg}')
             return None
 
@@ -497,7 +501,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         :return *: api http raw response or data.
         """
         try:
-            return super(CoindeskAPIClient, self).get(self.url, {}, raw)
+            return super(CoindeskAPIClient, self).get(self.url, raw)
         except Exception as err:
             msg = err.args[0]
             logger.error(f'[CoindeskAPICient] API call error. {msg}.')

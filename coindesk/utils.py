@@ -211,7 +211,7 @@ def validate_url(url):
         r'(?:[/?#][^\s]*)?$', re.IGNORECASE)
     match = regex.search(url)
     if not match:
-        msg = f'Invalid url.'
+        msg = f'Invalid url {url}.'
         logger.error(f'[CoinDeskAPIClient] Url error. {msg}')
         raise CoindeskAPIClientError(msg)
     return url
@@ -267,7 +267,7 @@ def update_currencies_settings(currencies):
     logger.info(f'[CoindeskAPIClient] File updated. {msg}')
 
 
-def get_schema(data_type, currency):
+def get_schema(data_type, currency=None):
     """
     Get schema for corresponding data and currency.
 
