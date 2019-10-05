@@ -283,7 +283,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         """
         classname = self.__class__.__name__
         endpoint = self._api_endpoint
-        return f'<{classname}:\nendpoint: {endpoint}>'
+        return f'<{classname} - Coindesk api client\nendpoint: {endpoint}>'
 
     @classmethod
     def start(cls, data_type=None, params={}, retries=10, redirects=True, timeout=5, backoff=True):
@@ -363,6 +363,13 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         Get Coindesk api endpoint.
         """
         return self._api_endpoint.url
+
+    @property
+    def origin(self):
+        """
+        Get Coindesk api endpoint origin.
+        """
+        return self._api_endpoint.origin
 
     @property
     def path(self):
@@ -483,9 +490,10 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         resource = settings.API_ENDPOINTS.get('supported-currencies')
         path = f'{path}/{self._clean_api_component(resource)}'
         url = URL(scheme=scheme, host=host, path=path)
+        currencies = None
         try:
             utils.validate_url(url.url)
-            currencies = super(CoindeskAPIClient, self).get(url.url, {}, False)
+            currencies = super(CoindeskAPIClient, self).get(url.url, False)
         except Exception as err:
             msg = err.args[0]
             logger.warning(f'[CoindeskAPICient] Get currencies error. {msg}.')
