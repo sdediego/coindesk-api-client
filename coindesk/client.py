@@ -557,6 +557,10 @@ class CoindeskAPIHttpResponse(object):
                 msg = f'Could not decode response. {err.args[0]}.'
                 logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}')
                 raise CoindeskAPIHttpResponseError(msg)
+        else:
+            msg = 'Response data type must be dict or str.'
+            logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}')
+            raise CoindeskAPIHttpResponseError(msg)
 
         schema = utils.get_schema(data_type, currency)
         cls._validate_response(response, schema)
