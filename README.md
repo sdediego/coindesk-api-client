@@ -2,7 +2,7 @@
 
 Powered by [![CoinDesk]()](https://www.coindesk.com/api/)
 
-Client written in Python3 for CoinDesk API service:
+Client written in Python3 for CoinDesk API service.
 
 ### Features
 
@@ -13,10 +13,11 @@ Client written in Python3 for CoinDesk API service:
 
 These instructions will get you a copy of the project on your local system.
 
-#### Prerequisites
+#### Dependencies
 
 CoinDesk API client uses a number of open source projects to work properly:
 
+* [aiohttp] - Asynchronous HTTP client/server for asyncio and Python
 * [furl] - URL parsing and manipulation made easy
 * [jsonschema] - An implementation of JSON Schema validation for Python
 * [requests] - Python HTTP for Humans
@@ -25,7 +26,10 @@ And of course CoinDesk API client itself is open source with a [public repositor
 
 #### Installation
 
-Intall the package from Pypi using ``pip install -U coindesk``.
+Intall the package from [Pypi][pypi] using the command:
+```sh
+pip install -U coindesk
+```
 
 #### Quick Start
 
@@ -55,8 +59,22 @@ response = api_client.get()
 Get historical price for Bitcoin providing optional parameters
 ```python
 from coindesk.client import CoinDeskAPIClient
-api_client = CoindeskAPIClient.start('historical', {'start': '2018-01-01'})
+api_client = CoindeskAPIClient.start('historical', {'currency': 'EUR', 'for': 'yesterday'})
 response = api_client.get()
+```
+
+Make a request with custom parameters either for currentprice or historical
+```python
+from coindesk.client import CoinDeskAPIClient
+api_client = CoindeskAPIClient.start('currentprice', retries=5, redirects=False, timeout=10)
+response = api_client.get()
+```
+
+Get raw http response either for currentprice or historical
+```python
+from coindesk.client import CoinDeskAPIClient
+api_client = CoindeskAPIClient.start('currentprice')
+response = api_client.get(raw=True)
 ```
 
 Get supported currencies to fetch Bitcoin price in
@@ -73,12 +91,13 @@ License
 
 MIT
 
-
 **Free Software. Hell Yeah!**
 
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen.)
 
    [coindesk-api-client]: <https://github.com/sdediego/coindesk-api-client>
+   [pypi]: <https://pypi.org/project/coindesk/>
+   [aiohttp]: <https://github.com/aio-libs/aiohttp>
    [furl]: <https://github.com/gruns/furl>
    [jsonschema]: <https://github.com/Julian/jsonschema>
    [requests]: <https://github.com/requests/requests>
