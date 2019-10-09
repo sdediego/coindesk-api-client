@@ -3,7 +3,6 @@
 
 import codecs
 import re
-
 from os.path import dirname, join
 from setuptools import setup
 
@@ -44,15 +43,16 @@ setup(
     author='Sergio de Diego',
     author_email='sergiodediego@outlook.com',
     url='https://github.com/sdediego/coindesk-api-client',
-    download_url='https://github.com/sdediego/coindesk-api-client/archive/v0.2.0-alpha.tar.gz',
+    download_url='https://github.com/sdediego/coindesk-api-client/archive/v1.0.0-alpha.tar.gz',
     packages=['coindesk'],
     install_requires=[
+        "aiohttp>=3.6.1",
         "jsonschema>=3.0.2",
         "requests>=2.22.0",
         "furl>=2.1.0",
     ],
     license='MIT',
-    keywords='coindesk bitcoin blockchain api client Python',
+    keywords='api asynchronous Bitcoin blockchain client Coindesk Python',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
