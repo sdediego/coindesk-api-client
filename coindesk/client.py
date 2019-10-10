@@ -13,6 +13,7 @@ from os.path import dirname, join
 import aiohttp
 import jsonschema
 import requests
+from aiohttp import ClientResponse, ClientSession
 from furl import furl as URL
 from jsonschema import SchemaError, ValidationError
 from requests.exceptions import RequestException
@@ -33,7 +34,7 @@ class CoindeskAPIHttpRequest(object):
     Enable Coindesk API http request.
     """
 
-    def __init__(self, retries=10, redirects=True, timeout=5, backoff=True):
+    def __init__(self, retries :int=10, redirects :bool=True, timeout :int=5, backoff :bool=True):
         """
         Initialize Coindesk API http request making.
 
@@ -57,7 +58,7 @@ class CoindeskAPIHttpRequest(object):
         return f'<{classname} - Coindesk api request>'
 
     @classmethod
-    def start(cls, retries=10, redirects=True, timeout=5, backoff=True):
+    def start(cls, retries :int=10, redirects :bool=True, timeout :int=5, backoff :bool=True):
         """
         Get Coindesk API http request instance.
 
@@ -71,7 +72,7 @@ class CoindeskAPIHttpRequest(object):
         return cls(retries, redirects, timeout, backoff)
 
     @staticmethod
-    def validate(retries, redirects, timeout, backoff):
+    def validate(retries :int, redirects :bool, timeout :int, backoff :bool):
         """
         Validate initialization parameters.
 
@@ -97,7 +98,7 @@ class CoindeskAPIHttpRequest(object):
         return self._retries
 
     @retries.setter
-    def retries(self, retries):
+    def retries(self, retries :int):
         """
         Set number of request attempts.
 
@@ -116,7 +117,7 @@ class CoindeskAPIHttpRequest(object):
         return self._redirects
 
     @redirects.setter
-    def redirects(self, redirects):
+    def redirects(self, redirects :bool):
         """
         Set/unset redirects.
 
@@ -133,7 +134,7 @@ class CoindeskAPIHttpRequest(object):
         return self._timeout
 
     @timeout.setter
-    def timeout(self, timeout):
+    def timeout(self, timeout :int):
         """
         Set number of seconds for request timeout.
 
@@ -152,7 +153,7 @@ class CoindeskAPIHttpRequest(object):
         return self._backoff
 
     @backoff.setter
-    def backoff(self, backoff):
+    def backoff(self, backoff :bool):
         """
         Set/unset request backoff.
 
@@ -162,7 +163,7 @@ class CoindeskAPIHttpRequest(object):
         self._backoff = backoff
 
     @async_event_loop
-    async def get(self, url, raw=False):
+    async def get(self, url :str, raw :bool=False):
         """
         Retrieve response object/data from Coindesk API url.
 
@@ -186,7 +187,7 @@ class CoindeskAPIHttpRequest(object):
             'timeout': self.timeout
         }
 
-    async def _http_request(self, session, url, options):
+    async def _http_request(self, session :ClientSession, url :str, options :dict):
         """
         Make asynchronous http request to Coindesk API.
 
@@ -208,7 +209,7 @@ class CoindeskAPIHttpRequest(object):
             logger.error(f'[CoindeskAPIHttpRequest] Request error. {msg}')
             raise CoindeskAPIHttpRequestError(msg)
 
-    def _wait_exp_backoff(self, retry):
+    def _wait_exp_backoff(self, retry :int):
         """
         Calculate exponential backoff time.
 
@@ -217,7 +218,7 @@ class CoindeskAPIHttpRequest(object):
         """
         return math.pow(2, retry)
 
-    def _check_response_status(self, response):
+    def _check_response_status(self, response :ClientResponse):
         """
         Verify http response status code.
 
@@ -238,7 +239,7 @@ class CoindeskAPIHttpRequest(object):
             logger.error(f'[CoindeskAPIHttpRequest] Server error. {msg}')
             raise CoindeskAPIHttpRequestError(msg)
 
-    async def _get_json_response(self, response):
+    async def _get_json_response(self, response :ClientResponse):
         """
         Return response json data format.
 
@@ -260,7 +261,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
     Enable Coindesk API use.
     """
 
-    def __init__(self, data_type=None, params={}, retries=10, redirects=True, timeout=5, backoff=True):
+    def __init__(self, data_type :str=None, params :dict={}, retries :int=10, redirects :bool=True, timeout :int=5, backoff :bool=True):
         """
         Initialize Coindesk API client.
 
@@ -286,7 +287,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         return f'<{classname} - Coindesk api client\nendpoint: {endpoint}>'
 
     @classmethod
-    def start(cls, data_type=None, params={}, retries=10, redirects=True, timeout=5, backoff=True):
+    def start(cls, data_type :str=None, params :dict={}, retries :int=10, redirects :bool=True, timeout :int=5, backoff :bool=True):
         """
         Get Coindesk API client instance.
 
@@ -303,7 +304,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         retries, redirects, timeout, backoff = cls.validate(retries, redirects, timeout, backoff)
         return cls(data_type, params, retries, redirects, timeout, backoff)
 
-    def _construct_api_endpoint(self, data_type, params):
+    def _construct_api_endpoint(self, data_type :str, params :dict):
         """
         Get Coindesk api endpoint.
 
@@ -331,7 +332,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         components = settings.API_PROTOCOL, settings.API_HOST, settings.API_PATH
         return [self._clean_api_component(component) for component in components]
 
-    def _clean_api_component(self, component):
+    def _clean_api_component(self, component :str):
         """
         Clean Coindesk api base url components.
 
@@ -348,7 +349,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         return self._data_type
 
     @data_type.setter
-    def data_type(self, data_type):
+    def data_type(self, data_type :str):
         """
         Set Coindesk API client data type and corresponding api path attribute.
 
@@ -391,7 +392,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
             return self._api_endpoint.query.params.items()
 
     @params.setter
-    def params(self, params):
+    def params(self, params :dict):
         """
         Set Coindesk API client optinal query parameters.
         This will overwrite all existing params.
@@ -404,7 +405,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         elif self.data_type == settings.API_HISTORICAL_DATA_TYPE:
             self._api_endpoint.query.params = params
 
-    def has_param(self, key):
+    def has_param(self, key :str):
         """
         Check if Coindesk API endpoint has certain param.
 
@@ -416,7 +417,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
             has_param = not self.path.endswith('currentprice.json')
         return has_param
 
-    def add_param(self, param):
+    def add_param(self, param :dict):
         """
         Add Coindesk API client optinal query parameter.
 
@@ -430,7 +431,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
             if self.has_param(key): self.delete_param(key)
             self._api_endpoint.add(args=param)
 
-    def add_many_params(self, params):
+    def add_many_params(self, params :dict):
         """
         Add many Coindesk API client optinal query parameters.
 
@@ -439,11 +440,11 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         for key, value in params.items():
             self.add_param({key: value})
 
-    def delete_param(self, param):
+    def delete_param(self, key :str):
         """
         Delete Coindesk API client optinal query parameter.
 
-        :param dict param: optional url query parameter.
+        :param str param: optional url query parameter.
         """
         deleted_param = None
         if self.data_type == settings.API_CURRENTPRICE_DATA_TYPE:
@@ -459,14 +460,14 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
             logger.warning(f'[CoindeskAPIClient] Delete param. {msg}')
         return deleted_param
 
-    def delete_many_params(self, params):
+    def delete_many_params(self, keys :list):
         """
         Delete many Coindesk API client optinal query parameters.
 
-        :param dict params: optional url query parameters.
+        :param list params: optional url query parameters.
         """
-        for key, value in params.items():
-            self.delete_param({key: value})
+        for key in keys:
+            self.delete_param(key)
 
     @property
     def valid_params(self):
@@ -501,7 +502,7 @@ class CoindeskAPIClient(CoindeskAPIHttpRequest):
         if currencies: utils.validate_currencies_settings(currencies)
         return currencies if currencies else utils.get_currencies_settings()
 
-    def get(self, raw=False):
+    def get(self, raw :bool=False):
         """
         Make http get request to Coindesk API.
 
@@ -521,7 +522,7 @@ class CoindeskAPIHttpResponse(object):
     Enable Coindesk API response data parsing.
     """
 
-    def __init__(self, response={}):
+    def __init__(self, response :dict={}):
         """
         Initialize Coindesk API http response.
 
@@ -541,7 +542,7 @@ class CoindeskAPIHttpResponse(object):
         return f'<{classname} - Coindesk api response>'
 
     @classmethod
-    def parse(cls, response, data_type=None, currency=None):
+    def parse(cls, response :dict, data_type :str=None, currency :str=None):
         """
         Parse http response from Coindesk API.
 
@@ -567,7 +568,7 @@ class CoindeskAPIHttpResponse(object):
         return cls(response)
 
     @staticmethod
-    def _validate_response(response, schema):
+    def _validate_response(response :dict, schema :dict):
         """
         Validate http response from Coindesk API.
 
@@ -581,7 +582,7 @@ class CoindeskAPIHttpResponse(object):
             logger.error(f'[CoindeskAPIHttpResponse] Response error. {msg}.')
             raise CoindeskAPIHttpResponseError(msg)
 
-    def get_response_item(self, item):
+    def get_response_item(self, item :str):
         """
         Get Coindesk response particular item value.
 

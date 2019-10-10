@@ -5,7 +5,7 @@ class BaseError(Exception):
     Handle generic exception.
     """
 
-    def __init__(self, message=None, code=None):
+    def __init__(self, message :str=None, code :int=None):
         """
         Initialize Base error class.
 
