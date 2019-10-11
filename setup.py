@@ -43,7 +43,7 @@ setup(
     author='Sergio de Diego',
     author_email='sergiodediego@outlook.com',
     url='https://github.com/sdediego/coindesk-api-client',
-    download_url='https://github.com/sdediego/coindesk-api-client/archive/v1.0.0-alpha.tar.gz',
+    download_url='https://github.com/sdediego/coindesk-api-client/archive/v1.1.0-alpha.tar.gz',
     packages=['coindesk'],
     install_requires=[
         "aiohttp>=3.6.1",
