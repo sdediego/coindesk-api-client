@@ -18,7 +18,7 @@ fileConfig(join(dirname(dirname(__file__)), 'logging.cfg'))
 logger = getLogger(__name__)
 
 
-def validate_data_type(data_type :str):
+def validate_data_type(data_type: str):
     """
     Validate data type to request.
 
@@ -31,7 +31,7 @@ def validate_data_type(data_type :str):
     return data_type
 
 
-def validate_params(data_type :str, params :dict):
+def validate_params(data_type: str, params: dict):
     """
     Validate query parameters of the request.
 
@@ -70,13 +70,14 @@ def validate_params(data_type :str, params :dict):
     return params
 
 
-def validate_index(index :str=None, params :dict={}):
+def validate_index(index: str = None, params: dict = None):
     """
     Validate index query parameter.
 
     :param str index: index optional url query parameter.
     :param dict params: optional query parameters.
     """
+    if params is None: params = {}
     index = index or params.get(settings.INDEX_PARAM)
     if index not in settings.VALID_INDEX:
         msg = f'Index must be {" or ".join(settings.VALID_INDEX)}.'
@@ -84,13 +85,14 @@ def validate_index(index :str=None, params :dict={}):
         raise CoindeskAPIClientError(msg)
 
 
-def validate_currency(currency :str=None, params :dict={}):
+def validate_currency(currency: str = None, params: dict = None):
     """
     Validate currency to request data in.
 
     :param str currency: currency to fetch data in.
     :param dict params: optional query parameters.
     """
+    if params is None: params = {}
     currency = currency or params.get(settings.CURRENCY_PARAM)
     currencies = list(map(lambda c: c['currency'], get_currencies_settings()))
     if currency is not None and currency not in currencies:
@@ -99,7 +101,7 @@ def validate_currency(currency :str=None, params :dict={}):
         raise CoindeskAPIClientError(msg)
 
 
-def validate_date(date :str=None, params :dict={}, flag :str=None):
+def validate_date(date: str = None, params: dict = None, flag: str = None):
     """
     Validate date query parameter.
 
@@ -107,6 +109,7 @@ def validate_date(date :str=None, params :dict={}, flag :str=None):
     :param dict params: optional query parameters.
     :param str flag: signalize "start" or "end" date.
     """
+    if params is None: params = {}
     date = date or params.get(flag)
     match = re.search(r'^(?P<date>\d{4}-\d{1,2}-\d{1,2})$', date)
     if match:
@@ -123,13 +126,14 @@ def validate_date(date :str=None, params :dict={}, flag :str=None):
         raise CoindeskAPIClientError(msg)
 
 
-def validate_for(for_param :str=None, params :dict={}):
+def validate_for(for_param: str = None, params: dict = None):
     """
     Validate for query parameter.
 
     :param str for: datetime signaling previous day data.
     :param dict params: optional query parameters.
     """
+    if params is None: params = {}
     for_param = for_param or params.get(settings.FOR_PARAM)
     if for_param not in settings.VALID_FOR:
         msg = f'For must be {settings.VALID_FOR[0]}.'
@@ -137,7 +141,7 @@ def validate_for(for_param :str=None, params :dict={}):
         raise CoindeskAPIClientError(msg)
 
 
-def validate_retries(retries :int):
+def validate_retries(retries: int):
     """
     Validate request retries attempt parameter.
 
@@ -154,7 +158,7 @@ def validate_retries(retries :int):
     return max_retries
 
 
-def validate_redirects(redirects :bool):
+def validate_redirects(redirects: bool):
     """
     Validate http request redirects.
 
@@ -168,7 +172,7 @@ def validate_redirects(redirects :bool):
     return redirects
 
 
-def validate_timeout(timeout :int):
+def validate_timeout(timeout: int):
     """
     Validate request timeout.
 
@@ -185,7 +189,7 @@ def validate_timeout(timeout :int):
     return max_timeout
 
 
-def validate_backoff(backoff :bool):
+def validate_backoff(backoff: bool):
     """
     Validate http request backoff.
 
@@ -199,7 +203,7 @@ def validate_backoff(backoff :bool):
     return backoff
 
 
-def validate_url(url :str):
+def validate_url(url: str):
     """
     Validate Coindesk constructed url.
 
@@ -217,7 +221,7 @@ def validate_url(url :str):
     return url
 
 
-def validate_currencies_settings(currencies :list):
+def validate_currencies_settings(currencies: list):
     """
     Validate supported currencies settings against feched ones.
 
@@ -248,7 +252,7 @@ def get_currencies_settings():
     return currencies.get('SUPPORTED_CURRENCIES')
 
 
-def update_currencies_settings(currencies :list):
+def update_currencies_settings(currencies: list):
     """
     Get supported currencies settings list.
 
@@ -267,7 +271,7 @@ def update_currencies_settings(currencies :list):
     logger.info(f'[CoindeskAPIClient] File updated. {msg}')
 
 
-def get_schema(data_type :str, currency :str=None):
+def get_schema(data_type: str, currency: str = None):
     """
     Get schema for corresponding data and currency.
 
@@ -291,7 +295,7 @@ def get_schema(data_type :str, currency :str=None):
     return schema
 
 
-def get_schema_for_currency(currency :str):
+def get_schema_for_currency(currency: str):
     """
     Set currentprice schema for specific currency.
 
